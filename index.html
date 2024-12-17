@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InQuote</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            color: #212121;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            padding: 20px;
+            min-height: 100vh;
+            background: url('assets/bg.avif') no-repeat center center;
+            background-size: cover;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            padding-left: 10px;
+            color: white;
+        }
+
+        .top-bar {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .top-bar div {
+            padding: 10px 15px;
+            font-size: 1rem;
+            cursor: pointer;
+            font-weight: 600;
+            color: var(--top-bar-default-color, #B0B0B0);
+            transition: color 0.3s ease;
+        }
+
+        .top-bar .selected {
+            color: var(--top-bar-selected-color, white);
+        }
+
+        .section {
+            display: grid;
+            gap: 20px;
+            width: 100%;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            padding: 20px 0;
+        }
+    .article-card {
+    position: relative;
+    padding: 20px;
+    border-radius: 12px;
+    color: var(--card-text-color, #212121);
+    text-align: left;
+    background: rgba(255, 255, 255, 0.3); /* Semi-transparent white */
+    backdrop-filter: blur(10px); /* Blur effect */
+    -webkit-backdrop-filter: blur(10px); /* Safari compatibility */
+    cursor: pointer;
+    transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
+    border: 1px solid rgba(0, 0, 0, 0.1); /* Optional border for definition */
+    -webkit-tap-highlight-color: transparent; /* Removes blue overlay on touch */
+    outline: none; /* Removes focus outline */
+    overflow: hidden; /* Ensure content stays within borders */
+}
+
+.article-card h3 {
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin-bottom: 10px;
+    color: #F1C40F; /* Golden color for titles */
+}
+
+.article-card p {
+    font-size: 0.9rem;
+    color: black; /* Ensure readable text */
+}
+
+/* Hover Effect */
+.article-card:hover {
+    transform: scale(1.05); /* Slight zoom effect */
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2); /* Add shadow on hover */
+    background: rgba(255, 255, 255, 0.5); /* Slightly more opaque */
+}
+
+/* Active State (On Click/Touch) */
+.article-card:active {
+    transform: scale(0.98); /* Slightly shrink on click */
+    box-shadow: inset 0 4px 6px rgba(0, 0, 0, 0.2); /* Pressed effect */
+    background: rgba(255, 255, 255, 0.2); /* Dim background on click */
+    outline: none;
+}
+
+/* Focus State (For Keyboard Users) */
+.article-card:focus {
+    outline: 2px solid #F1C40F; /* Optional focus outline for accessibility */
+    outline-offset: 4px;
+}
+
+    </style>
+</head>
+<body>
+    <div class="title">InQuote</div>
+
+    <!-- Top Bar -->
+    <div class="top-bar" id="topBar"></div>
+
+    <!-- Section for Articles -->
+    <div class="section" id="articlesSection"></div>
+
+    <script>
+        const options = [
+            { name: "Captions", articles: [
+                { title: "Inspirational Instagram Captions: Elevate Your Social Media Game", description: "Looking for motivational Instagram captions to spark positivity and engagement? Explore a collection of uplifting captions tailored for your social media posts.", link: "motivational1.json" },
+                { title: "Wanderlust Captions for Instagram: Travel the World Through Words", description: "Looking to inspire adventure with your Instagram travel posts? Discover a collection of wanderlust-worthy captions.", link: "travel1.json" },
+                { title: "Selfie Captions for Instagram: Boost Your Social Media Game", description: "Take your Instagram selfies to the next level with these catchy and creative captions! Whether you're aiming to inspire, entertain, or connect with your audience, these captions will make your posts stand out in the world of social media. Perfect for sharing your best moments and enhancing engagement.", link: "selfie1.json" },
+                { title: "Love Captions for Instagram: Share Your Heart with the World", description: "Express the magic of love and let your followers feel the romance with these heartfelt Instagram captions. Perfect for capturing the essence of your feelings and spreading love across social media.", link: "love1.json" },
+                { title: "Couples Captions for Instagram: Capture Your Love Story", description: "Celebrate your special bond with these perfect Instagram captions for couples. From romantic to playful, these captions are ideal for showing off your love on social media.", link: "couples1.json" },
+                { title: "Friendship Captions for Instagram: Celebrate Your Squad", description: "Showcase the bond you share with your friends using these creative Instagram captions. From heartfelt to fun, these captions are perfect for making your friendship moments unforgettable.", link: "friendship1.json" }
+ ]}
+        ];
+    
+        const topBar = document.getElementById('topBar');
+        const articlesSection = document.getElementById('articlesSection');
+    
+        // Function to show articles based on the selected option
+        function showArticles(index) {
+            // Clear previous selection
+            document.querySelectorAll('.top-bar div').forEach(div => div.classList.remove('selected'));
+    
+            // Mark the selected option
+            if (topBar.children[index]) {
+                topBar.children[index].classList.add('selected');
+            }
+    
+            // Display articles
+            articlesSection.innerHTML = '';
+            options[index].articles.forEach(article => {
+                const articleCard = document.createElement('div');
+                articleCard.classList.add('article-card');
+                articleCard.innerHTML = `
+                    <h3>${article.title}</h3>
+                    <p>${article.description}</p>
+                `;
+                articleCard.onclick = () => {
+                    if (options[index].name === "Captions") { // Pass parameters only for "Captions"
+                        const params = new URLSearchParams({
+                            title: article.title,
+                            description: article.description,
+                            file: article.link
+                        });
+                        window.location.href = `articles.html?${params.toString()}`;
+                    }
+                };
+                articlesSection.appendChild(articleCard);
+            });
+        }
+    
+        // Dynamically generate the top bar only if there are two or more options
+        if (options.length >= 2) {
+            options.forEach((option, index) => {
+                const optionDiv = document.createElement('div');
+                optionDiv.textContent = option.name;
+                optionDiv.onclick = () => showArticles(index);
+                topBar.appendChild(optionDiv);
+            });
+        }
+    
+        // Display first option's articles by default if there are multiple options
+        if (options.length >= 2) {
+            showArticles(0);
+        } else {
+            // If there's only one option, directly display its articles without top bar
+            showArticles(0);
+            topBar.style.display = 'none'; // Hide top bar if not needed
+        }
+    </script>
+    
+</body>
+</html>

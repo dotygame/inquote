@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InQuote</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            color: #212121;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            padding: 20px;
+            min-height: 100vh;
+            background: url('assets/bg.avif') no-repeat center center;
+            background-size: cover;
+            backdrop-filter: blur(10px); /* Blur effect */
+            -webkit-backdrop-filter: blur(10px); /* Safari compatibility */
+        }
+
+        /* Page Title */
+        .title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            padding-left: 10px;
+            color: #F1C40F;
+        }
+
+        /* Page Description */
+        .title-description {
+            font-size: 1.1rem;
+            color: black;
+            margin-bottom: 20px;
+            padding-left: 10px;
+            font-weight: 400;
+        }
+
+        /* Section grid for articles */
+        .section {
+            display: grid;
+            gap: 20px;
+            width: 100%;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            padding: 20px 0;
+        }
+
+        .article-card {
+            position: relative;
+            padding: 20px;
+            border-radius: 12px;
+            color: black;
+            text-align: left;
+            background: rgba(255, 255, 255, 0.3); /* Semi-transparent white */
+            backdrop-filter: blur(10px); /* Blur effect */
+            -webkit-backdrop-filter: blur(10px); /* Safari compatibility */
+            transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+            cursor: pointer;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            -webkit-tap-highlight-color: transparent; /* Removes blue overlay on touch */
+            outline: none; /* Removes focus outline */
+        }
+
+        .article-card:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+            background: rgba(255, 255, 255, 0.5); /* Slightly more opaque on hover */
+        }
+
+        .article-card:active {
+            transform: scale(0.97); /* Slightly shrink card when clicked */
+            background: rgba(255, 255, 255, 0.2);
+            box-shadow: inset 0 4px 6px rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+            outline: none; /* Remove blue outline */
+        }
+
+        /* Accessibility for keyboard navigation */
+        .article-card:focus {
+            outline: none; /* Removes focus styles for touch screens */
+        }
+
+        /* Popup Notification as a card below the description */
+        .popup-card {
+            padding: 15px;
+            border-radius: 8px;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: #FFFFFF;
+            margin-bottom: 20px;
+            text-align: center;
+            font-size: 1rem;
+            font-weight: 600;
+            animation: fadeOut 3s forwards 2s; /* Fade out after 2 seconds */
+        }
+
+        @keyframes fadeOut {
+            0% {
+                opacity: 1;
+            }
+            100% {
+                opacity: 0;
+                visibility: hidden;
+            }
+        }
+
+     #copyPopup {
+            position: absolute;
+            z-index: 1000;
+            padding: 10px 20px;
+            border-radius: 5px;
+            color: white;
+            font-size: 16px;
+            text-align: center;
+            transition: opacity 0.3s;
+            display: none;
+        }
+
+        #copyPopup.fade-out {
+            opacity: 0;
+        }
+
+    </style>
+</head>
+<body>
+    <!-- Page Title with Description -->
+    <div class="title" id="pageTitle">Title</div>
+    <div class="title-description" id="pageDescription">
+        Description
+    </div>
+
+    <!-- Popup Notification as a card below the description -->
+    <div class="popup-card" id="popup">Click any caption to copy it!</div>
+    <div id="copyPopup" class="copy-popup"></div>
+
+    <!-- Section articles in grid -->
+    <div class="section" id="articlesSection">
+        <!-- Articles will be dynamically inserted here -->
+    </div>
+
+    <script>
+        // Function to get query parameters from the URL
+        function getQueryParameter(name) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(name);
+        }
+
+        // Extract parameters from the URL
+        const jsonFilename = getQueryParameter('file') || 'default.json';  // Default to 'default.json' if not provided
+        const title = getQueryParameter('title') || 'Default Title';
+        const description = getQueryParameter('description') || 'Default Description';
+
+        // Fetch JSON file containing captions
+        fetch(jsonFilename)
+            .then(response => response.json())  // Parse the JSON response
+            .then(data => {
+                // Get the captions array from the JSON file
+                const captions = data.array;  // Assuming the JSON file has the structure { "array": [...] }
+
+                // Display the title and description
+                const titleElement = document.getElementById('pageTitle');
+                const descriptionElement = document.getElementById('pageDescription');
+
+                if (titleElement) titleElement.innerHTML = title;
+                if (descriptionElement) descriptionElement.innerHTML = description;
+
+                const articlesSection = document.getElementById('articlesSection');
+
+                // Display all captions as article cards
+                captions.forEach(caption => {
+                    const articleCard = document.createElement('div');
+                    articleCard.classList.add('article-card');
+                    articleCard.innerHTML = `<p>${caption}</p>`;
+                    articleCard.addEventListener('click', () => copyToClipboard(caption));
+                    articlesSection.appendChild(articleCard);
+                });
+
+              // Function to show the copy popup at the current scroll position
+        function showCopyPopup(message, success = true) {
+            const popup = document.getElementById('copyPopup');
+            popup.innerHTML = message;
+            popup.style.backgroundColor = success ? 'rgba(0, 0, 0, 0.7)' : 'rgba(255, 0, 0, 0.7)';
+            popup.style.display = 'block';
+
+            // Position the popup relative to the current scroll position
+            popup.style.top = `${window.scrollY + 20}px`;
+            popup.style.left = '50%';
+            popup.style.transform = 'translateX(-50%)';
+
+            // Fade out and hide the popup after a few seconds
+            setTimeout(() => {
+                popup.classList.add('fade-out');
+                setTimeout(() => {
+                    popup.style.display = 'none';
+                    popup.classList.remove('fade-out');
+                }, 300);
+            }, 500);
+        }
+
+                // Function to copy caption text to clipboard
+                function copyToClipboard(text) {
+                    if (navigator.clipboard && navigator.clipboard.writeText) {
+                        navigator.clipboard.writeText(text)
+                            .then(() => {
+                                showCopyPopup('Caption copied successfully!');
+                            })
+                            .catch(err => {
+                                console.error('Clipboard API failed, falling back to execCommand', err);
+                                fallbackCopyToClipboard(text);
+                            });
+                    } else {
+                        fallbackCopyToClipboard(text);
+                    }
+                }
+
+                function fallbackCopyToClipboard(text) {
+    // Create a temporary textarea element
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+
+    // Apply styles to minimize visibility and prevent unwanted effects
+    textarea.style.position = 'fixed'; // Prevent scrolling to the bottom
+    textarea.style.top = '0'; // Pin it to the top
+    textarea.style.left = '0'; // Align with the viewport
+    textarea.style.width = '1px'; // Make it almost invisible
+    textarea.style.height = '1px'; // Make it almost invisible
+    textarea.style.opacity = '0'; // Fully transparent
+    textarea.style.pointerEvents = 'none'; // Prevent user interaction
+    textarea.style.zIndex = '-1'; // Place it behind other elements
+
+    document.body.appendChild(textarea); // Add to the DOM
+
+    // Programmatically select and copy the text
+    textarea.select();
+    textarea.setSelectionRange(0, textarea.value.length); // For mobile compatibility
+
+    try {
+        const successful = document.execCommand('copy');
+        if (successful) {
+            showCopyPopup('Caption copied successfully!');
+        } else {
+            showCopyPopup('Failed to copy the caption.', false);
+        }
+    } catch (err) {
+        console.error('Fallback: Could not copy text', err);
+        showCopyPopup('Failed to copy the caption.', false);
+    }
+
+    // Clean up by removing the textarea
+    document.body.removeChild(textarea);
+}
+
+
+                // Dismiss popup automatically after a delay
+                const popup = document.getElementById('popup');
+                setTimeout(() => {
+                    if (popup) {
+                        popup.style.display = 'none';
+                    }
+                }, 2000); // Dismiss after 5 seconds
+            })
+            .catch(error => {
+                console.error('Error loading captions JSON:', error);
+            });
+    </script>
+</body>
+</html>
