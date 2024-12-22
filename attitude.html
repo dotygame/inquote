@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>(function(d,z,s){s.src='https://'+d+'/400/'+z;try{(document.body||document.documentElement).appendChild(s)}catch(e){}})('vemtoutcheeg.com',8674784,document.createElement('script'))</script>
+    <script type="text/javascript" src="https://udbaa.com/slider.php?section=General&pub=578925&ga=g&side=random"></script>
+    <title>InQuote</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            padding: 20px;
+            min-height: 100vh;
+            background-color: #000; /* Black background */
+        }
+
+        /* Page Title */
+        .title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            padding-left: 10px;
+            color: #F1C40F;
+        }
+
+        /* Page Description */
+        .title-description {
+            font-size: 1.1rem;
+            color: #ccc;
+            margin-bottom: 20px;
+            padding-left: 10px;
+            font-weight: 400;
+        }
+
+        /* Section grid for articles */
+        .section {
+            display: grid;
+            gap: 20px;
+            width: 100%;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            padding: 20px 0;
+        }
+
+        .article-card {
+            position: relative;
+            padding: 20px;
+            border-radius: 12px;
+            color: #ffffff;
+            text-align: left;
+            background: rgba(0, 0, 0, 0.9); /* Solid white background */
+            border: 2px solid #fff; /* White border */
+            cursor: pointer;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        @keyframes fadeOut {
+            0% {
+                opacity: 1;
+            }
+            100% {
+                opacity: 0;
+                visibility: hidden;
+            }
+        }
+
+        #copyPopup {
+            position: absolute;
+            z-index: 1000;
+            padding: 10px 20px;
+            border-radius: 5px;
+            color: black;
+            font-size: 16px;
+            text-align: center;
+            transition: opacity 0.3s;
+            display: none;
+        }
+
+        #copyPopup.fade-out {
+            opacity: 0;
+        }
+    </style>
+</head>
+<body>
+    <!-- Page Title with Description -->
+    <div class="title" id="pageTitle">Attitude Captions for Instagram: Show Off Your Bold Side</div>
+    <div class="title-description" id="pageDescription">
+        Elevate your Instagram game with bold and powerful attitude captions! Whether you’re flaunting confidence, embracing your unique vibe, or making a statement, these captions will make your social media posts stand out. Perfect for Instagram selfies, lifestyle posts, and mood-driven content.   </div>
+
+    <!-- Popup Notification as a card below the description -->
+    <div id="copyPopup" class="copy-popup"></div>
+
+    <!-- Section articles in grid -->
+    <div class="section" id="articlesSection">
+        <!-- Articles will be dynamically inserted here -->
+    </div>
+
+    <script>
+       
+        const jsonFilename = 'attitude1.json'; // Specify the JSON file for captions
+
+       
+        // Fetch JSON file containing captions
+        fetch(jsonFilename)
+            .then(response => response.json())  // Parse the JSON response
+            .then(data => {
+                // Get the captions array from the JSON file
+                const captions = data.array;  // Assuming the JSON file has the structure { "array": [...] }
+
+                const articlesSection = document.getElementById('articlesSection');
+
+                // Display all captions as article cards
+                captions.forEach(caption => {
+                    const articleCard = document.createElement('div');
+                    articleCard.classList.add('article-card');
+                    articleCard.innerHTML = `
+                    <p>${caption}</p>
+                    `;
+                    articleCard.addEventListener('click', () => copyToClipboard(caption));
+                    articlesSection.appendChild(articleCard);
+                });
+
+                // Function to show the copy popup
+                function showCopyPopup(message, success = true) {
+                    const popup = document.getElementById('copyPopup');
+                    popup.innerHTML = message;
+                    popup.style.backgroundColor = success ? 'rgba(255, 255, 255, 0.7)' : 'rgba(255, 0, 0, 0.7)';
+                    popup.style.display = 'block';
+
+                    // Position the popup
+                    popup.style.top = `${window.scrollY + 20}px`;
+                    popup.style.left = '50%';
+                    popup.style.transform = 'translateX(-50%)';
+
+                    // Fade out and hide the popup
+                    setTimeout(() => {
+                        popup.classList.add('fade-out');
+                        setTimeout(() => {
+                            popup.style.display = 'none';
+                            popup.classList.remove('fade-out');
+                        }, 300);
+                    }, 500);
+                }
+
+                // Function to copy caption text to clipboard
+                function copyToClipboard(text) {
+                    if (navigator.clipboard && navigator.clipboard.writeText) {
+                        navigator.clipboard.writeText(text)
+                            .then(() => {
+                                showCopyPopup('Caption copied successfully!');
+                            })
+                            .catch(err => {
+                                fallbackCopyToClipboard(text);
+                            });
+                    } else {
+                        fallbackCopyToClipboard(text);
+                    }
+                }
+
+                function fallbackCopyToClipboard(text) {
+                    const textarea = document.createElement('textarea');
+                    textarea.value = text;
+                    textarea.style.position = 'fixed';
+                    textarea.style.opacity = '0';
+                    document.body.appendChild(textarea);
+                    textarea.select();
+                    try {
+                        const successful = document.execCommand('copy');
+                        if (successful) {
+                            showCopyPopup('Caption copied successfully!');
+                        } else {
+                            showCopyPopup('Failed to copy the caption.', false);
+                        }
+                    } catch (err) {
+                        showCopyPopup('Failed to copy the caption.', false);
+                    }
+                    document.body.removeChild(textarea);
+                }
+            })
+            .catch(error => {
+                console.error('Error loading captions JSON:', error);
+            });
+    </script>
+</body>
+</html>
