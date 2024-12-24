@@ -3,108 +3,124 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tic Tac Toe Multiplayer</title>
-  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+  <title>Tic Tac Toe</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      background-color: black;
-      color: #FFD700; /* Dark Yellow */
-      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      background-color: #f0f0f0;
+      margin: 0;
     }
-    .grid {
+    #connection-ui {
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 20px;
+      align-items: center;
+    }
+    #game-board {
       display: grid;
       grid-template-columns: repeat(3, 100px);
       grid-template-rows: repeat(3, 100px);
-      gap: 5px;
-      justify-content: center;
-      margin: 20px auto;
-      background-color: #333;
-      border-radius: 10px;
-      padding: 10px;
+      gap: 10px;
+      margin-top: 20px;
+      pointer-events: none;
     }
     .cell {
-      border: 1px solid #FFD700;
+      width: 100px;
+      height: 100px;
       display: flex;
-      justify-content: center;
       align-items: center;
+      justify-content: center;
+      background-color: #fff;
+      border: 2px solid #ccc;
       font-size: 24px;
-      color: white;
-      background-color: #444;
-      border-radius: 5px;
       cursor: pointer;
     }
-    .cell.taken {
-      cursor: not-allowed;
+    .taken {
+      pointer-events: none;
     }
-    #game-board {
-      display: none;
+    #status-text {
+      margin-top: 10px;
+      font-size: 18px;
+      font-weight: bold;
     }
-    #peer-id, #status {
+    #result {
       margin-top: 20px;
-    }
-    .button {
-      background-color: #FFD700;
-      color: black;
-      padding: 10px 20px;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      margin: 5px;
-    }
-    .button:hover {
-      background-color: #ffcc00;
+      font-size: 20px;
+      font-weight: bold;
+      display: none;
     }
     .hidden {
       display: none;
     }
+    #play-again-button {
+      margin-top: 20px;
+      padding: 10px 20px;
+      font-size: 16px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    #play-again-button:hover {
+      background-color: #45a049;
+    }
   </style>
 </head>
 <body>
-  <h1>Tic Tac Toe Multiplayer</h1>
-  <button class="button" id="create-game">Create Game</button>
-  <button class="button" id="join-game">Join Game</button>
 
-  <div id="create-game-ui" class="hidden">
-    <p>Your Peer ID: <span id="peer-id"></span></p>
-    <p>Status: <span id="status">Waiting for opponent...</span></p>
+  <div id="connection-ui">
+    <div>Peer ID: <span id="peer-id"></span></div>
+    <button id="start-game" onclick="startGame()">Start Game</button>
+    <input type="text" id="connect-peer-id" placeholder="Enter peer ID to connect" />
+    <button id="connect-button" onclick="connectToPeer()">Connect</button>
   </div>
 
-  <div id="join-game-ui" class="hidden">
-    <input type="text" id="peer-id-input" placeholder="Enter Peer ID" />
-    <button class="button" id="join-button">Join</button>
-    <p>Status: <span id="status-join">Not connected</span></p>
-  </div>
-
-  <div class="grid" id="game-board"></div>
-
+  <div id="status-text">Waiting for opponent...</div>
+  
+  <div id="game-board"></div>
+  
   <div id="result" class="hidden">
-    <p id="result-message"></p>
-    <button class="button" id="play-again">Play Again</button>
+    <div id="result-message"></div>
+    <button id="play-again-button" class="hidden" onclick="resetGame()">Play Again</button>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/peerjs@1.3.2/dist/peerjs.min.js"></script>
   <script>
-    const peer = new Peer();
-    let conn;
-    let isCreator = false;
-
-    let gameBoard = ['', '', '', '', '', '', '', '', ''];
+    let peer;
+    let conn = null;
     let currentPlayer = 'X'; // 'X' for creator, 'O' for joiner
+    let gameBoard = ['', '', '', '', '', '', '', '', ''];
     let isGameConnected = false;
+    let isCreator = false;
     const cells = [];
-    const createGameButton = document.getElementById('create-game');
-    const joinGameButton = document.getElementById('join-game');
-    const joinButton = document.getElementById('join-button');
-    const createGameUI = document.getElementById('create-game-ui');
-    const joinGameUI = document.getElementById('join-game-ui');
+    
     const peerIdSpan = document.getElementById('peer-id');
-    const statusText = document.getElementById('status');
-    const statusJoinText = document.getElementById('status-join');
+    const statusText = document.getElementById('status-text');
     const gameBoardElement = document.getElementById('game-board');
-    const peerIdInput = document.getElementById('peer-id-input');
     const resultDiv = document.getElementById('result');
     const resultMessage = document.getElementById('result-message');
-    const playAgainButton = document.getElementById('play-again');
+    const playAgainButton = document.getElementById('play-again-button');
+    const connectButton = document.getElementById('connect-button');
+    const startButton = document.getElementById('start-game');
+    const connectPeerIdInput = document.getElementById('connect-peer-id');
+    
+    // Create the peer object
+    peer = new Peer();
+
+    // Initialize game board
+    for (let i = 0; i < 9; i++) {
+      const cell = document.createElement('div');
+      cell.classList.add('cell');
+      cell.dataset.index = i;
+      cell.addEventListener('click', handleCellClick);
+      cells.push(cell);
+      gameBoardElement.appendChild(cell);
+    }
 
     peer.on('open', id => {
       peerIdSpan.textContent = id;
@@ -125,104 +141,64 @@
 
       conn.on('open', () => {
         conn.send({ board: gameBoard, player: currentPlayer });
-        statusText.textContent = 'Connected to opponent. It\'s your turn!';
+        statusText.textContent = 'Connected to opponent. Your Turn!';
         hideConnectionUI();
         initializeGameBoard();
         gameBoardElement.style.display = 'grid';
       });
     });
 
-    createGameButton.addEventListener('click', () => {
-      createGameUI.style.display = 'block';
-      joinGameUI.style.display = 'none';
-    });
+    function startGame() {
+      statusText.textContent = 'Waiting for opponent to connect...';
+      connectButton.style.display = 'inline-block';
+      startButton.style.display = 'none';
+    }
 
-    joinGameButton.addEventListener('click', () => {
-      joinGameUI.style.display = 'block';
-      createGameUI.style.display = 'none';
-    });
-
-    joinButton.addEventListener('click', () => {
-      const peerId = peerIdInput.value.trim();
-      if (peerId) {
+    function connectToPeer() {
+      const peerId = connectPeerIdInput.value.trim();
+      if (peerId && peerId !== peer.id) {
         conn = peer.connect(peerId);
 
         conn.on('open', () => {
-          if (isGameConnected) {
-            conn.close();
-            alert('Game is already in progress. Connection rejected.');
-            return;
-          }
-
           isGameConnected = true;
-          isCreator = false;
-
-          statusJoinText.textContent = 'Connected to opponent.';
+          conn.send({ board: gameBoard, player: currentPlayer });
+          statusText.textContent = 'Connected to opponent. Your Turn!';
           hideConnectionUI();
           initializeGameBoard();
           gameBoardElement.style.display = 'grid';
-          conn.send({ requestBoard: true });
         });
 
         conn.on('data', handleData);
-      }
-    });
-
-    function hideConnectionUI() {
-      createGameButton.classList.add('hidden');
-      joinGameButton.classList.add('hidden');
-      createGameUI.classList.add('hidden');
-      joinGameUI.classList.add('hidden');
-      peerIdSpan.classList.add('hidden');
-      peerIdInput.classList.add('hidden');
-      joinButton.classList.add('hidden');
-      statusText.classList.add('hidden');
-      statusJoinText.classList.add('hidden');
-      peerIdSpan.parentElement.classList.add('hidden');
-      statusText.parentElement.classList.add('hidden');
-      statusJoinText.parentElement.classList.add('hidden');
-
-
-    }
-
-    function initializeGameBoard() {
-      gameBoardElement.innerHTML = '';
-      for (let i = 0; i < 9; i++) {
-        const cell = document.createElement('div');
-        cell.classList.add('cell');
-        cell.dataset.index = i;
-        cell.addEventListener('click', handleCellClick);
-        gameBoardElement.appendChild(cell);
-        cells[i] = cell;
+      } else {
+        alert('Please enter a valid peer ID.');
       }
     }
 
     function handleCellClick(event) {
       const cell = event.target;
       const index = parseInt(cell.dataset.index);
-    // Ensure the cell is empty and it is the current player's turn
-  if (gameBoard[index] === '' && ((currentPlayer === 'X' && conn.peer === undefined) || (currentPlayer === 'O' && conn.peer !== undefined))) {
-    gameBoard[index] = currentPlayer;
-    updateGameBoard();
 
-    // Switch the turn
-    currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
-    sendMove();
-  } else {
-    alert("It's not your turn!");
-  }
+      // Ensure the cell is empty and it is the current player's turn
+      if (gameBoard[index] === '' && (currentPlayer === 'X' && !conn.peer || currentPlayer === 'O' && conn.peer)) {
+        gameBoard[index] = currentPlayer;
+        updateGameBoard();
+        sendMove();
+
+        // Switch the turn
+        currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+        updateTurnStatus(); // Update turn status message
+      } else {
+        alert("It's not your turn!");
+      }
       checkGameOver();
     }
 
-    function updateGameBoard() {
-      cells.forEach((cell, index) => {
-        cell.textContent = gameBoard[index];
-        if (gameBoard[index] !== '') {
-          cell.classList.add('taken');
-        } else {
-          cell.classList.remove('taken');
-        }
-      });
+    function updateTurnStatus() {
+      if (currentPlayer === 'X') {
+        statusText.textContent = 'Your Turn!';
+      } else {
+        statusText.textContent = 'Other Player\'s Turn!';
+      }
     }
 
     function sendMove() {
@@ -242,75 +218,89 @@
         currentPlayer = data.player;
         updateGameBoard();
         checkGameOver();
+        updateTurnStatus(); // Update turn status based on received data
       }
+    }
+
+    function updateGameBoard() {
+      cells.forEach((cell, index) => {
+        cell.textContent = gameBoard[index];
+        if (gameBoard[index] !== '') {
+          cell.classList.add('taken');
+        } else {
+          cell.classList.remove('taken');
+        }
+      });
     }
 
     function checkGameOver() {
-  const winningCombinations = [
-    [0, 1, 2],
-    [3, 4, 5],
-    [6, 7, 8],
-    [0, 3, 6],
-    [1, 4, 7],
-    [2, 5, 8],
-    [0, 4, 8],
-    [2, 4, 6],
-  ];
+      const winningCombinations = [
+        [0, 1, 2],
+        [3, 4, 5],
+        [6, 7, 8],
+        [0, 3, 6],
+        [1, 4, 7],
+        [2, 5, 8],
+        [0, 4, 8],
+        [2, 4, 6],
+      ];
 
-  let winner = null;
+      let winner = null;
 
-  winningCombinations.forEach(combination => {
-    const [a, b, c] = combination;
-    if (gameBoard[a] && gameBoard[a] === gameBoard[b] && gameBoard[a] === gameBoard[c]) {
-      winner = gameBoard[a];
-    }
-  });
+      winningCombinations.forEach(combination => {
+        const [a, b, c] = combination;
+        if (gameBoard[a] && gameBoard[a] === gameBoard[b] && gameBoard[a] === gameBoard[c]) {
+          winner = gameBoard[a];
+        }
+      });
 
-  if (winner) {
-    if (winner === 'X') {
-      resultMessage.textContent = isCreator ? 'You win!' : 'Player 1 (X) wins!';
-    } else if (winner === 'O') {
-      resultMessage.textContent = !isCreator ? 'You win!' : 'Player 2 (O) wins!';
-    }
-    resultDiv.classList.remove('hidden');
-    if (isCreator) {
-      playAgainButton.classList.remove('hidden');
-    } else {
-      playAgainButton.classList.add('hidden');
-      resultMessage.textContent += ' Waiting for Player 1 to start a new game.';
-    }
-    gameBoardElement.style.pointerEvents = 'none';
-    return;
-  }
-
-  if (!gameBoard.includes('')) {
-    resultMessage.textContent = 'It\'s a draw!';
-    resultDiv.classList.remove('hidden');
-    if (isCreator) {
-      playAgainButton.classList.remove('hidden');
-    } else {
-      playAgainButton.classList.add('hidden');
-      resultMessage.textContent += ' Waiting for Player 1 to start a new game.';
-    }
-  }
-}
-
-
-  
-
-    playAgainButton.addEventListener('click', () => {
-      resetGame();
-      if (conn) {
-        conn.send({ reset: true });
+      if (winner) {
+        if (winner === 'X') {
+          resultMessage.textContent = isCreator ? 'You win!' : 'Player 1 (X) wins!';
+        } else if (winner === 'O') {
+          resultMessage.textContent = !isCreator ? 'You win!' : 'Player 2 (O) wins!';
+        }
+        resultDiv.classList.remove('hidden');
+        if (isCreator) {
+          playAgainButton.classList.remove('hidden');
+        } else {
+          playAgainButton.classList.add('hidden');
+          resultMessage.textContent += ' Waiting for Player 1 to start a new game.';
+        }
+        gameBoardElement.style.pointerEvents = 'none';
+        return;
       }
-    });
+
+      if (!gameBoard.includes('')) {
+        resultMessage.textContent = 'It\'s a draw!';
+        resultDiv.classList.remove('hidden');
+        if (isCreator) {
+          playAgainButton.classList.remove('hidden');
+        } else {
+          playAgainButton.classList.add('hidden');
+          resultMessage.textContent += ' Waiting for Player 1 to start a new game.';
+        }
+      }
+    }
 
     function resetGame() {
       gameBoard = ['', '', '', '', '', '', '', '', ''];
       currentPlayer = 'X';
       updateGameBoard();
       resultDiv.classList.add('hidden');
+      playAgainButton.classList.add('hidden');
+      statusText.textContent = 'Your Turn!';
       gameBoardElement.style.pointerEvents = 'auto';
+    }
+
+    function hideConnectionUI() {
+      // This function will hide any UI elements related to connection once the game starts.
+      document.getElementById('connection-ui').classList.add('hidden');
+    }
+
+    function initializeGameBoard() {
+      // Initialize or reset the game board if necessary.
+      gameBoardElement.style.display = 'grid';
     }
   </script>
 </body>
