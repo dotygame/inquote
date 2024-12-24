@@ -74,9 +74,9 @@
 <body>
 
   <div id="connection-ui">
-    <div>Peer ID: <span id="peer-id"></span></div>
+    <div id="peer-id-container">Your Peer ID: <span id="peer-id"></span></div>
     <button id="start-game" onclick="startGame()">Start Game</button>
-    <input type="text" id="connect-peer-id" placeholder="Enter peer ID to connect" />
+    <input type="text" id="connect-peer-id" placeholder="Enter Peer ID to Connect" />
     <button id="connect-button" onclick="connectToPeer()">Connect</button>
   </div>
 
@@ -179,7 +179,7 @@
       const index = parseInt(cell.dataset.index);
 
       // Ensure the cell is empty and it is the current player's turn
-      if (gameBoard[index] === '' && (currentPlayer === 'X' && !conn.peer || currentPlayer === 'O' && conn.peer)) {
+      if (gameBoard[index] === '' && currentPlayer !== '') {
         gameBoard[index] = currentPlayer;
         updateGameBoard();
         sendMove();
@@ -208,11 +208,6 @@
     }
 
     function handleData(data) {
-      if (data.reset) {
-        resetGame();
-        return;
-      }
-
       if (data.board) {
         gameBoard = data.board;
         currentPlayer = data.player;
