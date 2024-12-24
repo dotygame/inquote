@@ -8,6 +8,8 @@
   <style>
     body {
       font-family: Arial, sans-serif;
+      background-color: black;
+      color: #FFD700; /* Dark Yellow */
       text-align: center;
     }
     .grid {
@@ -17,13 +19,19 @@
       gap: 5px;
       justify-content: center;
       margin: 20px auto;
+      background-color: #333;
+      border-radius: 10px;
+      padding: 10px;
     }
     .cell {
-      border: 1px solid black;
+      border: 1px solid #FFD700;
       display: flex;
       justify-content: center;
       align-items: center;
       font-size: 24px;
+      color: white;
+      background-color: #444;
+      border-radius: 5px;
       cursor: pointer;
     }
     .cell.taken {
@@ -35,6 +43,18 @@
     #peer-id, #status {
       margin-top: 20px;
     }
+    .button {
+      background-color: #FFD700;
+      color: black;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      margin: 5px;
+    }
+    .button:hover {
+      background-color: #ffcc00;
+    }
     .hidden {
       display: none;
     }
@@ -42,8 +62,8 @@
 </head>
 <body>
   <h1>Tic Tac Toe Multiplayer</h1>
-  <button id="create-game">Create Game</button>
-  <button id="join-game">Join Game</button>
+  <button class="button" id="create-game">Create Game</button>
+  <button class="button" id="join-game">Join Game</button>
 
   <div id="create-game-ui" class="hidden">
     <p>Your Peer ID: <span id="peer-id"></span></p>
@@ -52,20 +72,24 @@
 
   <div id="join-game-ui" class="hidden">
     <input type="text" id="peer-id-input" placeholder="Enter Peer ID" />
-    <button id="join-button">Join</button>
+    <button class="button" id="join-button">Join</button>
     <p>Status: <span id="status-join">Not connected</span></p>
   </div>
 
   <div class="grid" id="game-board"></div>
+
+  <div id="result" class="hidden">
+    <p id="result-message"></p>
+    <button class="button" id="play-again">Play Again</button>
+  </div>
 
   <script>
     const peer = new Peer();
     let conn;
     let gameBoard = ['', '', '', '', '', '', '', '', ''];
     let currentPlayer = 'X'; // 'X' for creator, 'O' for joiner
-    const cells = [];
     let isGameConnected = false;
-
+    const cells = [];
     const createGameButton = document.getElementById('create-game');
     const joinGameButton = document.getElementById('join-game');
     const joinButton = document.getElementById('join-button');
@@ -76,6 +100,9 @@
     const statusJoinText = document.getElementById('status-join');
     const gameBoardElement = document.getElementById('game-board');
     const peerIdInput = document.getElementById('peer-id-input');
+    const resultDiv = document.getElementById('result');
+    const resultMessage = document.getElementById('result-message');
+    const playAgainButton = document.getElementById('play-again');
 
     peer.on('open', id => {
       peerIdSpan.textContent = id;
@@ -83,29 +110,32 @@
 
     peer.on('connection', connection => {
       if (isGameConnected) {
-        connection.close(); // Reject the connection
+        connection.close();
         alert('Game is already in progress. Connection rejected.');
         return;
       }
 
       isGameConnected = true;
       conn = connection;
-
       conn.on('data', handleData);
-      statusText.textContent = 'Connected to opponent. It\'s your turn!';
-      hideConnectionUI();
-      initializeGameBoard();
-      gameBoardElement.style.display = 'grid';
+
+      conn.on('open', () => {
+        conn.send({ board: gameBoard, player: currentPlayer });
+        statusText.textContent = 'Connected to opponent. It\'s your turn!';
+        hideConnectionUI();
+        initializeGameBoard();
+        gameBoardElement.style.display = 'grid';
+      });
     });
 
     createGameButton.addEventListener('click', () => {
-      createGameUI.classList.remove('hidden');
-      joinGameUI.classList.add('hidden');
+      createGameUI.style.display = 'block';
+      joinGameUI.style.display = 'none';
     });
 
     joinGameButton.addEventListener('click', () => {
-      joinGameUI.classList.remove('hidden');
-      createGameUI.classList.add('hidden');
+      joinGameUI.style.display = 'block';
+      createGameUI.style.display = 'none';
     });
 
     joinButton.addEventListener('click', () => {
@@ -115,7 +145,7 @@
 
         conn.on('open', () => {
           if (isGameConnected) {
-            conn.close(); // Reject the connection
+            conn.close();
             alert('Game is already in progress. Connection rejected.');
             return;
           }
@@ -125,6 +155,7 @@
           hideConnectionUI();
           initializeGameBoard();
           gameBoardElement.style.display = 'grid';
+          conn.send({ requestBoard: true });
         });
 
         conn.on('data', handleData);
@@ -151,21 +182,21 @@
     }
 
     function handleCellClick(event) {
-  const cell = event.target;
-  const index = parseInt(cell.dataset.index);
-
-  // Ensure the cell is empty and it is the current player's turn
-  if (gameBoard[index] === '' && ((currentPlayer === 'X' && conn.peer === undefined) || (currentPlayer === 'O' && conn.peer !== undefined))) {
-    gameBoard[index] = currentPlayer;
-    updateGameBoard();
-
-    // Switch the turn
-    currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
-    sendMove();
-  } else {
-    alert("It's not your turn!");
-  }
-}
+      const cell = event.target;
+      const index = parseInt(cell.dataset.index);
+      if (gameBoard[index] === '' && currentPlayer === 'X') {
+        gameBoard[index] = 'X';
+        currentPlayer = 'O';
+        updateGameBoard();
+        sendMove();
+      } else if (gameBoard[index] === '' && currentPlayer === 'O') {
+        gameBoard[index] = 'O';
+        currentPlayer = 'X';
+        updateGameBoard();
+        sendMove();
+      }
+      checkGameOver();
+    }
 
     function updateGameBoard() {
       cells.forEach((cell, index) => {
@@ -180,17 +211,71 @@
 
     function sendMove() {
       if (conn) {
-        conn.send({
-          board: gameBoard,
-          player: currentPlayer
-        });
+        conn.send({ board: gameBoard, player: currentPlayer });
       }
     }
 
     function handleData(data) {
-      gameBoard = data.board;
-      currentPlayer = data.player;
+      if (data.reset) {
+        resetGame();
+        return;
+      }
+
+      if (data.board) {
+        gameBoard = data.board;
+        currentPlayer = data.player;
+        updateGameBoard();
+        checkGameOver();
+      }
+    }
+
+    function checkGameOver() {
+      const winningCombinations = [
+        [0, 1, 2],
+        [3, 4, 5],
+        [6, 7, 8],
+        [0, 3, 6],
+        [1, 4, 7],
+        [2, 5, 8],
+        [0, 4, 8],
+        [2, 4, 6],
+      ];
+
+      let winner = null;
+
+      winningCombinations.forEach(combination => {
+        const [a, b, c] = combination;
+        if (gameBoard[a] && gameBoard[a] === gameBoard[b] && gameBoard[a] === gameBoard[c]) {
+          winner = gameBoard[a];
+        }
+      });
+
+      if (winner) {
+        resultMessage.textContent = `Player ${winner} wins!`;
+        resultDiv.classList.remove('hidden');
+        gameBoardElement.style.pointerEvents = 'none';
+        return;
+      }
+
+      if (!gameBoard.includes('')) {
+        resultMessage.textContent = 'It\'s a draw!';
+        resultDiv.classList.remove('hidden');
+      }
+    }
+
+    playAgainButton.addEventListener('click', () => {
+      resetGame();
+      if (conn) {
+        conn.send({ reset: true });
+      }
+    });
+
+    function resetGame() {
+      gameBoard = ['', '', '', '', '', '', '', '', ''];
+      currentPlayer = 'X';
       updateGameBoard();
+      resultDiv.classList.add('hidden');
+      gameBoardElement.style.pointerEvents = 'auto';
     }
   </script>
 </body>
