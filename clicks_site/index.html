@@ -14,10 +14,11 @@
     This is a placeholder for base href that will be replaced by the value of
     the `--base-href` argument provided to `flutter build`.
   -->
- <script>
-  // Redirect all 404s to index.html for client-side routing
-  if (location.pathname !== '/' && !location.pathname.startsWith('/clicks_site')) {
-    location.replace('/clicks_site/');
+<script>
+  // Redirect all paths to index.html
+  if (location.pathname.startsWith('/clicks_site') && location.pathname !== '/clicks_site/') {
+    const newPath = location.pathname.replace('/clicks_site', '');
+    location.replace('/clicks_site/' + newPath);
   }
 </script>
 
