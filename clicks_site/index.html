@@ -26,6 +26,13 @@
   <title>clicks</title>
   <link rel="manifest" href="manifest.json">
  <style>
+  body {
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
       #welcome-text {
         text-align: center;
         margin: 20px;
@@ -33,6 +40,11 @@
         font-weight: 800;
         color: yellow;
       }
+    #flutter-container {
+    width: 100%;
+    flex-grow: 1;
+    }
+  
     </style>
 </head>
 <body>
@@ -42,7 +54,8 @@
         Where your clicks matter! Smash that button to contribute to humanity's most pointless yet oddly satisfying goal: the World Click Count. Watch the number rise as strangers around the globe unite in the noble pursuit of... clicking. Add your clicks, send them to the cloud, and marvel at the collective power of utterly aimless collaboration. Let’s click our way to infinity—one pointless tap at a time!
       </p>
     </div>
- 
-  <script src="flutter_bootstrap.js" async></script>
+ <div id="flutter-container">
+    <script src="flutter_bootstrap.js" async></script>
+ </div>
 </body>
 </html>
