@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TimeY</title>
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: white;
+      background-color: black;
+      text-align: center;
+      margin: 0;
+      padding: 20px;
+    }
+    h1, h2 {
+      margin: 20px 0;
+    }
+    .time-container {
+      font-size: 1.5em;
+      margin: 10px 0;
+    }
+    .yellow {
+      color: yellow;
+    }
+    .progress-container {
+      margin: 20px auto;
+      width: 80%;
+    }
+    .progress-bar {
+      width: 100%;
+      background-color: white;
+      height: 20px;
+      border-radius: 10px;
+      overflow: hidden;
+      position: relative;
+    }
+    .progress-fill {
+      height: 100%;
+      background-color: yellow;
+      width: 0%;
+      transition: width 0.5s ease;
+    }
+    .progress-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 0.9em;
+      color: black;
+    }
+    select {
+      font-family: 'Poppins', sans-serif;
+      font-weight: 700;
+      text-transform: uppercase;
+      background-color: yellow;
+      color: black;
+      border: none;
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Time Since New Year -->
+  <h2>TIME SINCE THE START OF THE NEW YEAR</h2>
+  <div class="time-container" id="newYearTime">
+    Loading...
+  </div>
+
+  <!-- Today's Progress -->
+  <h2>TODAY'S PROGRESS</h2>
+  <div class="time-container" id="todaysProgress">
+    Loading...
+  </div>
+  <div class="time-container" id="timeLeftToday">
+    Loading...
+  </div>
+  <div class="progress-container">
+    <div class="progress-bar">
+      <div class="progress-fill" id="progressFill">
+        <span class="progress-text" id="progressText">0%</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Year Progress -->
+  <h2>YEAR PROGRESS</h2>
+  <div class="time-container" id="yearProgress">
+    Loading...
+  </div>
+  <div class="progress-container">
+    <div class="progress-bar">
+      <div class="progress-fill" id="yearProgressFill">
+        <span class="progress-text" id="yearProgressText">0%</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Month Progress -->
+  <h2>MONTH PROGRESS</h2>
+  <select id="monthSelector">
+    <option value="0">January</option>
+    <option value="1">February</option>
+    <option value="2">March</option>
+    <option value="3">April</option>
+    <option value="4">May</option>
+    <option value="5">June</option>
+    <option value="6">July</option>
+    <option value="7">August</option>
+    <option value="8">September</option>
+    <option value="9">October</option>
+    <option value="10">November</option>
+    <option value="11">December</option>
+  </select>
+  <div class="time-container" id="monthProgress">
+    Loading...
+  </div>
+  <div class="progress-container">
+    <div class="progress-bar">
+      <div class="progress-fill" id="monthProgressFill">
+        <span class="progress-text" id="monthProgressText">0%</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function updateTime() {
+      const now = new Date();
+
+      // Time since the start of the new year
+      const startOfYear = new Date(now.getFullYear(), 0, 1); 
+      const diffInSecondsNewYear = Math.floor((now - startOfYear) / 1000);
+
+      const totalHoursNewYear = Math.floor(diffInSecondsNewYear / 3600);
+      const totalMinutesNewYear = Math.floor(diffInSecondsNewYear / 60);
+      const totalSecondsNewYear = diffInSecondsNewYear;
+
+      document.getElementById("newYearTime").innerHTML = 
+        `<span class="yellow">${totalHoursNewYear}</span> hours, 
+         <span class="yellow">${totalMinutesNewYear}</span> minutes, 
+         <span class="yellow">${totalSecondsNewYear}</span> seconds`;
+
+      // Today's progress
+      const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+      const diffInSecondsToday = Math.floor((now - startOfDay) / 1000);
+      const secondsLeftToday = Math.floor((endOfDay - now) / 1000);
+
+      const hoursToday = Math.floor(diffInSecondsToday / 3600);
+      const minutesToday = Math.floor((diffInSecondsToday % 3600) / 60);
+      const secondsToday = diffInSecondsToday % 60;
+
+      const hoursLeftToday = Math.floor(secondsLeftToday / 3600);
+      const minutesLeftToday = Math.floor((secondsLeftToday % 3600) / 60);
+      const secondsLeft = secondsLeftToday % 60;
+
+      document.getElementById("todaysProgress").innerHTML = 
+        `Time passed today: <span class="yellow">${hoursToday}</span> hours, 
+        <span class="yellow">${minutesToday}</span> minutes, 
+        <span class="yellow">${secondsToday}</span> seconds`;
+
+      document.getElementById("timeLeftToday").innerHTML = 
+        `Time left today: <span class="yellow">${hoursLeftToday}</span> hours, 
+        <span class="yellow">${minutesLeftToday}</span> minutes, 
+        <span class="yellow">${secondsLeft}</span> seconds`;
+
+      const totalSecondsInDay = 24 * 3600;
+      const progressPercentage = (diffInSecondsToday / totalSecondsInDay) * 100;
+      document.getElementById("progressFill").style.width = `${progressPercentage}%`;
+      document.getElementById("progressText").textContent = `${progressPercentage.toFixed(2)}%`;
+
+      // Year Progress
+      const totalDaysInYear = Math.floor((new Date(now.getFullYear() + 1, 0, 1) - startOfYear) / (1000 * 60 * 60 * 24));
+      const daysPassedInYear = Math.floor((now - startOfYear) / (1000 * 60 * 60 * 24));
+      const daysLeftInYear = totalDaysInYear - daysPassedInYear;
+      const yearProgress = (daysPassedInYear / totalDaysInYear) * 100;
+
+      document.getElementById("yearProgress").innerHTML = `
+        <span class="yellow">${daysPassedInYear}</span> days completed, 
+        <span class="yellow">${daysLeftInYear}</span> days left out of 
+        <span class="yellow">${totalDaysInYear}</span> total days`;
+      document.getElementById("yearProgressFill").style.width = `${yearProgress}%`;
+      document.getElementById("yearProgressText").textContent = `${yearProgress.toFixed(2)}%`;
+
+      // Month Progress
+      const monthSelector = document.getElementById("monthSelector");
+      const selectedMonth = parseInt(monthSelector.value, 10);
+      const startOfMonth = new Date(now.getFullYear(), selectedMonth, 1);
+      const endOfMonth = new Date(now.getFullYear(), selectedMonth + 1, 1);
+      const totalDaysInMonth = Math.floor((endOfMonth - startOfMonth) / (1000 * 60 * 60 * 24));
+
+      let daysPassedInMonth, daysLeftInMonth, monthProgress;
+
+      if (selectedMonth > now.getMonth()) {
+        document.getElementById("monthProgress").textContent = "MONTH NOT STARTED YET";
+        document.getElementById("monthProgressFill").style.width = "0%";
+        document.getElementById("monthProgressText").textContent = "0%";
+      } else if (selectedMonth < now.getMonth()) {
+        daysPassedInMonth = totalDaysInMonth;
+        daysLeftInMonth = 0;
+        monthProgress = 100;
+
+        document.getElementById("monthProgress").innerHTML = `
+          <span class="yellow">${daysPassedInMonth}</span> days completed, 
+          <span class="yellow">${daysLeftInMonth}</span> days left out of 
+          <span class="yellow">${totalDaysInMonth}</span> total days`;
+        document.getElementById("monthProgressFill").style.width = "100%";
+        document.getElementById("monthProgressText").textContent = "100%";
+      } else {
+        daysPassedInMonth = Math.floor((now - startOfMonth) / (1000 * 60 * 60 * 24));
+        daysLeftInMonth = totalDaysInMonth - daysPassedInMonth;
+        monthProgress = (daysPassedInMonth / totalDaysInMonth) * 100;
+
+        document.getElementById("monthProgress").innerHTML = `
+          <span class="yellow">${daysPassedInMonth}</span> days completed, 
+          <span class="yellow">${daysLeftInMonth}</span> days left out of 
+          <span class="yellow">${totalDaysInMonth}</span> total days`;
+        document.getElementById("monthProgressFill").style.width = `${monthProgress}%`;
+        document.getElementById("monthProgressText").textContent = `${monthProgress.toFixed(2)}%`;
+      }
+    }
+
+    document.getElementById("monthSelector").addEventListener("change", updateTime);
+
+    setInterval(updateTime, 1000);
+    updateTime();
+  </script>
+</body>
+</html>
