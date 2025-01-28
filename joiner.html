@@ -11,47 +11,43 @@
 </head>
 <body>
     <h1>Join: Tic Tac Toe</h1>
-    <p>Enter Game ID to Join:</p>
-    <input type="text" id="gameIdInput" placeholder="Enter Game ID" />
-    <button id="joinButton">Join Game</button>
-    <p>Status: <span id="status">Waiting to join a game...</span></p>
+    <label for="gameIdInput">Enter Game ID: </label>
+    <input type="text" id="gameIdInput" placeholder="Game ID">
+    <button onclick="joinGame()">Join Game</button>
+    <p>Status: <span id="status">Waiting for Player 1...</span></p>
     <div id="board" class="board" style="display:none;"></div>
 
     <script>
-        const gun = Gun();
-
-        let game;
+        const gun = Gun(['https://gun-manhattan.herokuapp.com/gun']); // Use public relay
+        let game = null;
+        let gameId = '';
         const boardDiv = document.getElementById("board");
         const statusText = document.getElementById("status");
 
-        document.getElementById("joinButton").onclick = () => {
-            const gameId = document.getElementById("gameIdInput").value.trim();
+        function joinGame() {
+            gameId = document.getElementById("gameIdInput").value;
             if (!gameId) {
                 alert("Please enter a valid Game ID.");
                 return;
             }
+
+            // Join the game
             game = gun.get(gameId);
 
-            // Notify host that Player 2 has joined
-            game.once((data) => {
-                if (data && data.players < 2) {
-                    game.put({ players: 2, status: "Player 1's Turn" });
-                }
-            });
-
-            // Listen for game updates
+            // Wait for the game to be initialized or updated
             game.on((data) => {
                 if (!data) return;
 
-                // Ensure default values to avoid "undefined players"
+                // Ensure default values
                 const board = JSON.parse(data.board || '["", "", "", "", "", "", "", "", ""]');
                 const players = data.players || 0;
-                const status = data.status || "Waiting for updates...";
+                const status = data.status || "Waiting for Player 1...";
 
+                // Update status and render the board
                 if (players === 2) {
-                    renderBoard(board);
                     statusText.innerText = status;
                     boardDiv.style.display = "grid";
+                    renderBoard(board);
                 } else {
                     statusText.innerText = "Waiting for Player 1...";
                 }
@@ -61,7 +57,7 @@
                     boardDiv.style.display = "none";
                 }
             });
-        };
+        }
 
         function renderBoard(board) {
             boardDiv.innerHTML = "";
