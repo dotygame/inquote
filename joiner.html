@@ -33,15 +33,22 @@
             // Connect to the game
             game = gun.get(gameId);
 
-            // Update player count
+            // Check if game exists and players can join
             game.once((data) => {
                 if (!data || data.players >= 2) {
                     alert("Game full or not found.");
                     return;
                 }
-                game.put({ players: 2, status: "Player 1's Turn" });
-            });
 
+                // Update player count
+                game.put({ players: 2, status: "Player 1's Turn" });
+
+                // Listen for updates
+                setupGameListeners();
+            });
+        }
+
+        function setupGameListeners() {
             // Listen for game updates
             game.on((data) => {
                 if (!data) return;
