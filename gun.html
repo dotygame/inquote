@@ -10,45 +10,42 @@
     </style>
 </head>
 <body>
-    <h1>Host: Tic Tac Toe</h1>
+    <h1>Tic Tac Toe - Host</h1>
     <p>Game ID: <span id="gameId"></span></p>
-    <p>Status: <span id="status">Waiting for Player 2...</span></p>
+    <p>Status: <span id="status">Waiting for Player 2 to join...</span></p>
     <div id="board" class="board" style="display:none;"></div>
 
     <script>
-        const gun = Gun(['https://gun-manhattan.herokuapp.com/gun']); // Use public relay
-
-        const gameId = Math.random().toString(36).substring(2, 8); // Generate unique game ID
-        const game = gun.get(gameId);
-        document.getElementById("gameId").innerText = gameId;
-
+        const gun = Gun(['https://gun-manhattan.herokuapp.com/gun']); // Public Gun.js relay
         const boardDiv = document.getElementById("board");
         const statusText = document.getElementById("status");
+        const gameId = Math.random().toString(36).substr(2, 9); // Generate a unique Game ID
+        document.getElementById("gameId").innerText = gameId;
 
-        // Initialize game state
+        const game = gun.get(gameId);
+
+        // Initialize game data
         game.put({
-            players: 1,
             board: JSON.stringify(["", "", "", "", "", "", "", "", ""]),
+            players: 1,
             currentPlayer: "X",
-            status: "Waiting for Player 2..."
+            status: "Waiting for Player 2 to join..."
         });
 
-        // Listen for game updates
+        // Monitor game data
         game.on((data) => {
             if (!data) return;
 
-            // Ensure default values
             const board = JSON.parse(data.board || '["", "", "", "", "", "", "", "", ""]');
-            const players = data.players || 0;
-            const status = data.status || "Waiting for updates...";
+            const players = data.players || 1;
+            const status = data.status || "Waiting for Player 2...";
 
-            // Update status and render the board
             if (players === 2) {
-                statusText.innerText = status;
                 boardDiv.style.display = "grid";
+                statusText.innerText = status;
                 renderBoard(board);
             } else {
-                statusText.innerText = "Waiting for Player 2...";
+                statusText.innerText = "Waiting for Player 2 to join...";
             }
 
             if (data.winner) {
