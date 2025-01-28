@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Tic Tac Toe - Join</title>
+    <script src="https://cdn.jsdelivr.net/npm/gun/gun.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; }
+        .board { display: grid; grid-template-columns: repeat(3, 100px); gap: 5px; margin: 20px auto; }
+        .cell { width: 100px; height: 100px; font-size: 2rem; display: flex; justify-content: center; align-items: center; border: 1px solid #333; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>Join: Tic Tac Toe</h1>
+    <p>Enter Game ID to Join:</p>
+    <input type="text" id="gameIdInput" placeholder="Enter Game ID" />
+    <button id="joinButton">Join Game</button>
+    <p>Status: <span id="status">Waiting to join a game...</span></p>
+    <div id="board" class="board" style="display:none;"></div>
+
+    <script>
+        const gun = Gun();
+
+        let game;
+        const boardDiv = document.getElementById("board");
+        const statusText = document.getElementById("status");
+
+        document.getElementById("joinButton").onclick = () => {
+            const gameId = document.getElementById("gameIdInput").value.trim();
+            if (!gameId) {
+                alert("Please enter a valid Game ID.");
+                return;
+            }
+            game = gun.get(gameId);
+
+            // Notify host that Player 2 has joined
+            game.once((data) => {
+                if (data && data.players < 2) {
+                    game.put({ players: 2, status: "Player 1's Turn" });
+                }
+            });
+
+            // Listen for game updates
+            game.on((data) => {
+                if (!data) return;
+
+                // Ensure default values to avoid "undefined players"
+                const board = JSON.parse(data.board || '["", "", "", "", "", "", "", "", ""]');
+                const players = data.players || 0;
+                const status = data.status || "Waiting for updates...";
+
+                if (players === 2) {
+                    renderBoard(board);
+                    statusText.innerText = status;
+                    boardDiv.style.display = "grid";
+                } else {
+                    statusText.innerText = "Waiting for Player 1...";
+                }
+
+                if (data.winner) {
+                    alert(`Player ${data.winner} wins!`);
+                    boardDiv.style.display = "none";
+                }
+            });
+        };
+
+        function renderBoard(board) {
+            boardDiv.innerHTML = "";
+            board.forEach((cell, index) => {
+                const cellDiv = document.createElement("div");
+                cellDiv.className = "cell";
+                cellDiv.innerText = cell;
+                cellDiv.onclick = () => makeMove(index, board);
+                boardDiv.appendChild(cellDiv);
+            });
+        }
+
+        function makeMove(index, board) {
+            game.once((data) => {
+                if (board[index] || data.currentPlayer !== "O" || data.status !== "Player 2's Turn") return;
+                const newBoard = [...board];
+                newBoard[index] = "O";
+                const winner = checkWinner(newBoard);
+                game.put({
+                    board: JSON.stringify(newBoard),
+                    currentPlayer: "X",
+                    status: winner ? "Player O Wins!" : "Player 1's Turn",
+                    winner: winner || null
+                });
+            });
+        }
+
+        function checkWinner(board) {
+            const winningCombinations = [
+                [0, 1, 2], [3, 4, 5], [6, 7, 8],
+                [0, 3, 6], [1, 4, 7], [2, 5, 8],
+                [0, 4, 8], [2, 4, 6]
+            ];
+            for (const [a, b, c] of winningCombinations) {
+                if (board[a] && board[a] === board[b] && board[a] === board[c]) return board[a];
+            }
+            return null;
+        }
+    </script>
+</body>
+</html>
