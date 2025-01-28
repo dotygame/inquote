@@ -16,7 +16,7 @@
     <div id="board" class="board" style="display:none;"></div>
 
     <script>
-        const gun = Gun();
+        const gun = Gun(['https://gun-manhattan.herokuapp.com/gun']); // Use public relay
 
         const gameId = Math.random().toString(36).substring(2, 8); // Generate unique game ID
         const game = gun.get(gameId);
