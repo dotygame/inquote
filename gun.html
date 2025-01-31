@@ -1,96 +1,345 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Tic Tac Toe - Host</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gun.js Multiplayer Tic-Tac-Toe</title>
     <script src="https://cdn.jsdelivr.net/npm/gun/gun.js"></script>
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; }
-        .board { display: grid; grid-template-columns: repeat(3, 100px); gap: 5px; margin: 20px auto; }
-        .cell { width: 100px; height: 100px; font-size: 2rem; display: flex; justify-content: center; align-items: center; border: 1px solid #333; cursor: pointer; }
-    </style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
+
+    body {
+        font-family: 'Poppins', sans-serif;
+        background-color: #0d1117;
+        color: #ffffff;
+        text-align: center;
+        margin: 0;
+        padding: 0;
+    }
+
+    h1 {
+        font-size: 2rem;
+        margin-top: 20px;
+        color: #1f6feb;
+    }
+
+    #lobby {
+        margin-top: 40px;
+    }
+
+    input {
+        padding: 12px;
+        font-size: 16px;
+        border: 2px solid #1f6feb;
+        background-color: #161b22;
+        color: #ffffff;
+        border-radius: 5px;
+        width: 220px;
+        text-align: center;
+        outline: none;
+        transition: 0.3s;
+    }
+
+    input:focus {
+        border-color: #58a6ff;
+    }
+
+    .btn {
+        background-color: #1f6feb;
+        color: white;
+        border: none;
+        padding: 12px 20px;
+        font-size: 16px;
+        cursor: pointer;
+        margin: 10px;
+        border-radius: 5px;
+        transition: background 0.3s, transform 0.2s;
+        font-weight: 600;
+    }
+
+    .btn:hover {
+        background-color: #58a6ff;
+    }
+
+    #gameScreen {
+        display: none;
+        margin-top: 20px;
+    }
+
+    h2, h3 {
+        color: #1f6feb;
+        font-size: 1.5rem;
+    }
+
+    #gameGrid {
+        display: grid;
+        grid-template-columns: repeat(3, 100px);
+        grid-gap: 10px;
+        margin: 20px auto;
+        width: max-content;
+    }
+
+    .cell {
+        width: 100px;
+        height: 100px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 32px;
+        font-weight: 600;
+        cursor: pointer;
+        background-color: #161b22;
+        border: 2px solid #1f6feb;
+        color: #ffffff;
+        border-radius: 5px;
+        transition: background-color 0.3s;
+    }
+
+    .cell:hover {
+        background-color: #24292f;
+    }
+
+    .cell.taken {
+        pointer-events: none;
+        color: #58a6ff;
+        background-color: #161b22;
+    }
+
+    #status {
+        font-size: 18px;
+        margin-top: 15px;
+        font-weight: 600;
+        color: #1f6feb;
+    }
+
+    #playAgainBtn {
+        display: none;
+        background-color: #1f6feb;
+        color: white;
+        border: none;
+        padding: 12px 20px;
+        cursor: pointer;
+        font-size: 16px;
+        margin-top: 20px;
+        border-radius: 5px;
+        transition: background 0.3s, transform 0.2s;
+        font-weight: 600;
+    }
+
+    #playAgainBtn:hover {
+        background-color: #58a6ff;
+    }
+
+    @media (max-width: 600px) {
+        h1 {
+            font-size: 1.8rem;
+        }
+
+        #gameGrid {
+            grid-template-columns: repeat(3, 80px);
+            grid-gap: 8px;
+        }
+
+        .cell {
+            width: 80px;
+            height: 80px;
+            font-size: 28px;
+        }
+
+        .btn {
+            font-size: 14px;
+            padding: 10px 16px;
+        }
+    }
+</style>
+        
 </head>
 <body>
-    <h1>Tic Tac Toe - Host</h1>
-    <p>Game ID: <span id="gameId"></span></p>
-    <p>Status: <span id="status">Waiting for Player 2 to join...</span></p>
-    <div id="board" class="board" style="display:none;"></div>
+
+    <h1>Multiplayer Tic-Tac-Toe</h1>
+
+    <div id="lobby">
+        <button class="btn" onclick="hostGame()">Host Game</button>
+        <input type="text" id="gameIdInput" placeholder="Enter Game ID">
+        <button class="btn" onclick="joinGame()">Join Game</button>
+    </div>
+
+    <div id="gameScreen" style="display: none;">
+        <h2>Game ID: <span id="gameIdDisplay"></span></h2>
+        <h3 id="status">Waiting for players...</h3>
+        <div id="gameGrid"></div>
+        <button id="playAgainBtn" class="btn" onclick="resetGame()">Play Again</button>
+    </div>
 
     <script>
-        const gun = Gun(['https://gun-manhattan.herokuapp.com/gun']); // Public Gun.js relay
-        const boardDiv = document.getElementById("board");
-        const statusText = document.getElementById("status");
-        const gameId = Math.random().toString(36).substr(2, 9); // Generate a unique Game ID
-        document.getElementById("gameId").innerText = gameId;
+        let gun = Gun(['https://gun-manhattan.herokuapp.com/gun']);
+        let gameId, gameRef;
+        let playerSymbol = null;
+        let currentTurn = "X";
+        let gameEnded = false;
+        let gameStarted = false;
 
-        const game = gun.get(gameId);
+        function hostGame() {
+            gameId = Math.random().toString(36).substr(2, 6);
+            gameRef = gun.get(`game-${gameId}`);
+            document.getElementById("gameIdDisplay").innerText = gameId;
+            playerSymbol = "X"; 
+            gameRef.get("players").set("X");
+            setupGame();
+        }
 
-        // Initialize game data
-        game.put({
-            board: JSON.stringify(["", "", "", "", "", "", "", "", ""]),
-            players: 1,
-            currentPlayer: "X",
-            status: "Waiting for Player 2 to join..."
-        });
-
-        // Monitor game data
-        game.on((data) => {
-            if (!data) return;
-
-            const board = JSON.parse(data.board || '["", "", "", "", "", "", "", "", ""]');
-            const players = data.players || 1;
-            const status = data.status || "Waiting for Player 2...";
-
-            if (players === 2) {
-                boardDiv.style.display = "grid";
-                statusText.innerText = status;
-                renderBoard(board);
-            } else {
-                statusText.innerText = "Waiting for Player 2 to join...";
-            }
-
-            if (data.winner) {
-                alert(`Player ${data.winner} wins!`);
-                boardDiv.style.display = "none";
-            }
-        });
-
-        function renderBoard(board) {
-            boardDiv.innerHTML = "";
-            board.forEach((cell, index) => {
-                const cellDiv = document.createElement("div");
-                cellDiv.className = "cell";
-                cellDiv.innerText = cell;
-                cellDiv.onclick = () => makeMove(index, board);
-                boardDiv.appendChild(cellDiv);
+        function joinGame() {
+            gameId = document.getElementById("gameIdInput").value;
+            if (!gameId) return alert("Enter a valid Game ID");
+            gameRef = gun.get(`game-${gameId}`);
+            document.getElementById("gameIdDisplay").innerText = gameId;
+            
+            gameRef.get("players").once(data => {
+                if (data && Object.values(data).includes("O")) {
+                    alert("Game is full!");
+                } else {
+                    playerSymbol = "O";
+                    gameRef.get("players").set("O");
+                    setupGame();
+                }
             });
         }
 
-        function makeMove(index, board) {
-            game.once((data) => {
-                if (board[index] || data.currentPlayer !== "X" || data.status !== "Player 1's Turn") return;
-                const newBoard = [...board];
-                newBoard[index] = "X";
-                const winner = checkWinner(newBoard);
-                game.put({
-                    board: JSON.stringify(newBoard),
-                    currentPlayer: "O",
-                    status: winner ? "Player X Wins!" : "Player 2's Turn",
-                    winner: winner || null
+        function setupGame() {
+            document.getElementById("lobby").style.display = "none";
+            document.getElementById("gameScreen").style.display = "block";
+            createGrid(3);
+
+            gameRef.get("players").on(data => {
+                let joinedPlayers = Object.values(data || {});
+                if (joinedPlayers.includes("X") && joinedPlayers.includes("O")) {
+                    document.getElementById("status").innerText = "Game Started! Turn: X";
+                    gameRef.get("turn").put("X");
+                    gameStarted =true;
+                }
+            });
+
+            gameRef.get("turn").on(turn => {
+                if (!gameEnded && turn) {
+                    currentTurn = turn;
+                    document.getElementById("status").innerText = `Turn: ${turn}`;
+                }
+            });
+
+            gameRef.get("winner").on(winner => {
+                if (winner) {
+                    gameEnded = true;
+                    document.getElementById("status").innerText = winner === "Draw" ? "It's a Draw!" : `${winner} Wins!`;
+                    disableBoard();
+                    document.getElementById("playAgainBtn").style.display = (playerSymbol === "X") ? "block" : "none";
+                }
+            });
+
+            gameRef.get("reset").on(resetValue => {
+                if (resetValue) handleReset();
+            });
+        }
+
+        function createGrid(size) {
+            let grid = document.getElementById("gameGrid");
+            grid.style.display = "grid";
+            grid.innerHTML = "";
+
+            for (let i = 0; i < size * size; i++) {
+                let cell = document.createElement("div");
+                cell.classList.add("cell");
+                cell.dataset.index = i;
+                cell.onclick = () => makeMove(i);
+                grid.appendChild(cell);
+
+                gameRef.get(`cell-${i}`).on(value => {
+                    if (value) {
+                        cell.innerText = value.symbol;
+                        cell.classList.add("taken");
+                        if (value.result) updateResult(value.result);
+                    }
                 });
+            }
+        }
+
+        function makeMove(index) {
+            if (!playerSymbol || currentTurn !== playerSymbol || gameEnded ||!gameStarted) return;
+            gameRef.get(`cell-${index}`).once(value => {
+                if (!value) {
+                    let result = checkWinAfterMove(index, playerSymbol);
+                    gameRef.get(`cell-${index}`).put({ symbol: playerSymbol, result });
+                }
             });
         }
 
-        function checkWinner(board) {
-            const winningCombinations = [
-                [0, 1, 2], [3, 4, 5], [6, 7, 8],
-                [0, 3, 6], [1, 4, 7], [2, 5, 8],
-                [0, 4, 8], [2, 4, 6]
+        function checkWinAfterMove(index, symbol) {
+            let grid = Array.from(document.getElementsByClassName("cell")).map(cell => cell.innerText || "");
+            grid[index] = symbol; 
+
+            let winningPatterns = [
+                [0, 1, 2], [3, 4, 5], [6, 7, 8], 
+                [0, 3, 6], [1, 4, 7], [2, 5, 8], 
+                [0, 4, 8], [2, 4, 6]  
             ];
-            for (const [a, b, c] of winningCombinations) {
-                if (board[a] && board[a] === board[b] && board[a] === board[c]) return board[a];
+
+            for (let pattern of winningPatterns) {
+                let [a, b, c] = pattern;
+                if (grid[a] && grid[a] === grid[b] && grid[a] === grid[c]) {
+                    gameRef.get("winner").put(grid[a]);
+                    return grid[a];
+                }
             }
+
+            if (grid.every(cell => cell !== "")) {
+                gameRef.get("winner").put("Draw");
+                return "Draw";
+            }
+
+            switchTurn();
             return null;
         }
+
+        function switchTurn() {
+            if (!gameEnded) {
+                currentTurn = currentTurn === "X" ? "O" : "X";
+                gameRef.get("turn").put(currentTurn);
+            }
+        }
+
+        function updateResult(winner) {
+            gameEnded = true;
+            document.getElementById("status").innerText = winner === "Draw" ? "It's a Draw!" : `${winner} Wins!`;
+            disableBoard();
+            document.getElementById("playAgainBtn").style.display = (playerSymbol === "X") ? "block" : "none";
+        }
+
+        function disableBoard() {
+            document.querySelectorAll(".cell").forEach(cell => cell.classList.add("taken"));
+        }
+
+        function resetGame() {
+            gameRef.get("reset").put(Date.now());  
+        }
+
+        function handleReset() {
+            gameEnded = false;
+            document.getElementById("status").innerText = "New game started!";
+            gameRef.get("turn").put("X");
+            gameRef.get("winner").put(null);
+
+            for (let i = 0; i < 9; i++) {
+                gameRef.get(`cell-${i}`).put(null);
+            }
+
+            document.querySelectorAll(".cell").forEach(cell => {
+                cell.innerText = "";
+                cell.classList.remove("taken");
+            });
+
+            document.getElementById("playAgainBtn").style.display = "none";
+            gameStarted = true;
+        }
     </script>
+
 </body>
 </html>
