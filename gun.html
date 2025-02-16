@@ -1,345 +1,680 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gun.js Multiplayer Tic-Tac-Toe</title>
-    <script src="https://cdn.jsdelivr.net/npm/gun/gun.js"></script>
-    <style>
-    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
-
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PeerJS Card Game</title>
+  <!-- Load Poppins font -->
+  <link
+    href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
+  <!-- Load PeerJS from CDN -->
+  
+  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+  <style>
+    /* Global Styles */
+    * { box-sizing: border-box; }
     body {
-        font-family: 'Poppins', sans-serif;
-        background-color: #0d1117;
-        color: #ffffff;
-        text-align: center;
-        margin: 0;
-        padding: 0;
+      margin: 0;
+      padding: 0;
+      background: #f4f7f9;
+      font-family: 'Poppins', sans-serif;
+      color: #333;
     }
-
-    h1 {
-        font-size: 2rem;
-        margin-top: 20px;
-        color: #1f6feb;
+    .container {
+      max-width: 800px;
+      margin: 30px auto;
+      padding: 20px;
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      position: relative;
     }
-
-    #lobby {
-        margin-top: 40px;
+    h1, h2, h3 { margin: 15px 0; font-weight: 600; }
+    h1 { text-align: center; font-size: 2rem; color: #2c3e50; }
+    /* Start Screen */
+    #startScreen { text-align: center; margin-bottom: 20px; }
+    #playButton {
+      padding: 15px 30px;
+      font-size: 1.2rem;
+      background: #2c3e50;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background 0.3s ease;
     }
-
-    input {
-        padding: 12px;
-        font-size: 16px;
-        border: 2px solid #1f6feb;
-        background-color: #161b22;
-        color: #ffffff;
-        border-radius: 5px;
-        width: 220px;
-        text-align: center;
-        outline: none;
-        transition: 0.3s;
-    }
-
-    input:focus {
-        border-color: #58a6ff;
-    }
-
+    #playButton:hover { background: #34495e; }
+    /* Connection Selection */
+    #connectionSelection { display: none; text-align: center; margin-bottom: 20px; }
     .btn {
-        background-color: #1f6feb;
-        color: white;
-        border: none;
-        padding: 12px 20px;
-        font-size: 16px;
-        cursor: pointer;
-        margin: 10px;
-        border-radius: 5px;
-        transition: background 0.3s, transform 0.2s;
-        font-weight: 600;
+      display: inline-block;
+      padding: 10px 20px;
+      margin: 5px;
+      background: #2c3e50;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background 0.3s ease;
     }
-
-    .btn:hover {
-        background-color: #58a6ff;
+    .btn:hover { background: #34495e; }
+    /* Host & Join Options */
+    #hostDisplay, #joinDisplay { display: none; text-align: center; margin-bottom: 20px; }
+    #joinDisplay input[type="text"] {
+      padding: 8px;
+      width: 60%;
+      max-width: 300px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-size: 1rem;
+      margin-bottom: 10px;
     }
-
-    #gameScreen {
-        display: none;
-        margin-top: 20px;
+    /* Game Area */
+    #gameArea { display: none; }
+    #status { font-size: 1.2rem; text-align: center; margin: 10px 0; }
+    #playedCards {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      margin: 20px 0;
     }
-
-    h2, h3 {
-        color: #1f6feb;
-        font-size: 1.5rem;
+    .card {
+      width: 80px;
+      height: 120px;
+      background: #fff;
+      border: 2px solid #333;
+      border-radius: 8px;
+      position: relative;
+      user-select: none;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
     }
-
-    #gameGrid {
-        display: grid;
-        grid-template-columns: repeat(3, 100px);
-        grid-gap: 10px;
-        margin: 20px auto;
-        width: max-content;
+    .card .corner { position: absolute; font-size: 0.8rem; }
+    .top-left { top: 4px; left: 4px; }
+    .top-right { top: 4px; right: 4px; }
+    .bottom-left { bottom: 4px; left: 4px; }
+    .bottom-right { bottom: 4px; right: 4px; }
+    .card .center {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 2rem;
+      font-weight: 500;
     }
-
-    .cell {
-        width: 100px;
-        height: 100px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 32px;
-        font-weight: 600;
-        cursor: pointer;
-        background-color: #161b22;
-        border: 2px solid #1f6feb;
-        color: #ffffff;
-        border-radius: 5px;
-        transition: background-color 0.3s;
+    #hand {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 20px;
     }
-
-    .cell:hover {
-        background-color: #24292f;
+    #pastRounds { text-align: center; margin: 10px 0; }
+    .pastCard {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 60px;
+      background: #fff;
+      border: 1px solid #333;
+      border-radius: 4px;
+      margin: 0 2px;
+      font-size: 0.8rem;
     }
-
-    .cell.taken {
-        pointer-events: none;
-        color: #58a6ff;
-        background-color: #161b22;
+    #logBox {
+      background: #bdc3c7;
+      padding: 10px;
+      border-radius: 5px;
+      margin-top: 20px;
+      height: 150px;
+      overflow-y: auto;
+      font-size: 0.9rem;
     }
-
-    #status {
-        font-size: 18px;
-        margin-top: 15px;
-        font-weight: 600;
-        color: #1f6feb;
+    /* Instructions – Always visible at the bottom */
+    #instructions {
+      background: #ecf0f1;
+      padding: 15px;
+      border-radius: 5px;
+      margin-top: 20px;
+      font-size: 0.95rem;
+      line-height: 1.5;
     }
-
-    #playAgainBtn {
-        display: none;
-        background-color: #1f6feb;
-        color: white;
-        border: none;
-        padding: 12px 20px;
-        cursor: pointer;
-        font-size: 16px;
-        margin-top: 20px;
-        border-radius: 5px;
-        transition: background 0.3s, transform 0.2s;
-        font-weight: 600;
-    }
-
-    #playAgainBtn:hover {
-        background-color: #58a6ff;
-    }
-
-    @media (max-width: 600px) {
-        h1 {
-            font-size: 1.8rem;
-        }
-
-        #gameGrid {
-            grid-template-columns: repeat(3, 80px);
-            grid-gap: 8px;
-        }
-
-        .cell {
-            width: 80px;
-            height: 80px;
-            font-size: 28px;
-        }
-
-        .btn {
-            font-size: 14px;
-            padding: 10px 16px;
-        }
-    }
-</style>
-        
+  </style>
 </head>
 <body>
-
-    <h1>Multiplayer Tic-Tac-Toe</h1>
-
-    <div id="lobby">
-        <button class="btn" onclick="hostGame()">Host Game</button>
-        <input type="text" id="gameIdInput" placeholder="Enter Game ID">
-        <button class="btn" onclick="joinGame()">Join Game</button>
+  <div class="container">
+    <h1>PeerJS Card Game</h1>
+    <!-- Start Screen -->
+    <div id="startScreen">
+      <button id="playButton">Play</button>
     </div>
-
-    <div id="gameScreen" style="display: none;">
-        <h2>Game ID: <span id="gameIdDisplay"></span></h2>
-        <h3 id="status">Waiting for players...</h3>
-        <div id="gameGrid"></div>
-        <button id="playAgainBtn" class="btn" onclick="resetGame()">Play Again</button>
+    <!-- Connection Selection -->
+    <div id="connectionSelection">
+      <button class="btn" onclick="chooseHost()">Host Game</button>
+      <button class="btn" onclick="chooseJoin()">Join Game</button>
     </div>
+    <!-- Host Options -->
+    <div id="hostDisplay">
+      <p><strong>Your Peer ID:</strong> <span id="peerIdDisplay"></span></p>
+      <p>Share this code with your friend to connect.</p>
+    </div>
+    <!-- Join Options -->
+    <div id="joinDisplay">
+      <p>Enter the code your friend shared with you:</p>
+      <input type="text" id="hostIdInput" placeholder="Enter host Peer ID" />
+      <button class="btn" onclick="joinGame()">Join</button>
+    </div>
+    <!-- Game Area -->
+    <div id="gameArea">
+      <h2 id="status">Waiting for connection...</h2>
+      <div id="playedCards">
+        <div id="leaderCardDisplay" class="card" style="display:none;"></div>
+        <div id="followerCardDisplay" class="card" style="display:none;"></div>
+      </div>
+      <h2>Your Hand</h2>
+      <div id="hand"></div>
+      <h3>Last Round</h3>
+      <div id="pastRounds"></div>
+      <h3>Game Log</h3>
+      <div id="logBox"></div>
+    </div>
+    <!-- Instructions: Always Visible -->
+    <div id="instructions">
+      <h3>How to Play</h3>
+      <p>
+        In each round one player leads by playing a card. The other must follow suit if possible.
+      </p>
+      <p>
+        <strong>Normal Round:</strong> If the follower plays a card matching the led suit, the higher card loses. The loser becomes the leader for the next round.
+      </p>
+      <p>
+        <strong>Cut Round:</strong> If the follower does not follow suit, it’s a cut round and the leader loses automatically (taking both played cards).
+      </p>
+      <p>
+        After each round, both players draw a card (if available). The first player to finish all their cards wins.
+      </p>
+    </div>
+  </div>
 
-    <script>
-        let gun = Gun(['https://gunjs.herokuapp.com/gun']);
-        let gameId, gameRef;
-        let playerSymbol = null;
-        let currentTurn = "X";
-        let gameEnded = false;
-        let gameStarted = false;
+  <script>
+    /***********************
+     * PeerJS Setup with TURN Fallback
+     ***********************/
+    let usingTurn = false;     // Flag to determine whether to use TURN credentials.
+    let turnIceServers = null; // Will hold the TURN ICE server array when fetched.
+    let peer;                  // Global Peer instance.
 
-        function hostGame() {
-            gameId = Math.random().toString(36).substr(2, 6);
-            gameRef = gun.get(`game-${gameId}`);
-            document.getElementById("gameIdDisplay").innerText = gameId;
-            playerSymbol = "X"; 
-            gameRef.get("players").set("X");
-            setupGame();
-        }
-
-        function joinGame() {
-            gameId = document.getElementById("gameIdInput").value;
-            if (!gameId) return alert("Enter a valid Game ID");
-            gameRef = gun.get(`game-${gameId}`);
-            document.getElementById("gameIdDisplay").innerText = gameId;
-            
-            gameRef.get("players").once(data => {
-                if (data && Object.values(data).includes("O")) {
-                    alert("Game is full!");
-                } else {
-                    playerSymbol = "O";
-                    gameRef.get("players").set("O");
-                    setupGame();
-                }
+    // Function to initialize the Peer instance.
+    function initializePeer(callback) {
+      if (usingTurn) {
+        if (turnIceServers) {
+          peer = new Peer(null, { config: { iceServers: turnIceServers } });
+          callback(peer);
+        } else {
+          fetch("https://turnserveracey.onrender.com/turn")
+            .then(response => response.json())
+            .then(data => {
+              // Build ICE server list with a STUN server plus TURN servers.
+              turnIceServers = [
+                { urls: "stun:stun.cloudflare.com:3478" },
+                ...data.iceServers
+              ];
+              peer = new Peer(null, { config: { iceServers: turnIceServers } });
+              callback(peer);
+            })
+            .catch(err => {
+              console.error("Error fetching TURN credentials", err);
+              peer = new Peer(null, { config: { iceServers: [{ urls: "stun:stun.cloudflare.com:3478" }] } });
+              callback(peer);
             });
         }
+      } else {
+        // Use only a STUN server.
+        peer = new Peer(null, { config: { iceServers: [{ urls: "stun:stun.cloudflare.com:3478" }] } });
+        callback(peer);
+      }
+    }
 
-        function setupGame() {
-            document.getElementById("lobby").style.display = "none";
-            document.getElementById("gameScreen").style.display = "block";
-            createGrid(3);
+    // Initially, create the Peer instance with STUN only.
+    initializePeer(function(p) {
+      peer = p;
+      peer.on("open", id => {
+        document.getElementById("peerIdDisplay").innerText = id;
+      });
+      peer.on("error", err => {
+        console.error(err);
+      });
+    });
 
-            gameRef.get("players").on(data => {
-                let joinedPlayers = Object.values(data || {});
-                if (joinedPlayers.includes("X") && joinedPlayers.includes("O")) {
-                    document.getElementById("status").innerText = "Game Started! Turn: X";
-                    gameRef.get("turn").put("X");
-                    gameStarted =true;
-                }
-            });
+    /***********************
+     * Helper Functions: Dialog & UI Reset
+     ***********************/
+    function showDialog(message, callback) {
+      alert(message);
+      if (callback) callback();
+    }
 
-            gameRef.get("turn").on(turn => {
-                if (!gameEnded && turn) {
-                    currentTurn = turn;
-                    document.getElementById("status").innerText = `Turn: ${turn}`;
-                }
-            });
+    // Reset UI to the starting stage: show start screen and connection selection; hide game area.
+    function resetToInitialUI() {
+      document.getElementById("gameArea").style.display = "none";
+      document.getElementById("hostDisplay").style.display = "none";
+      document.getElementById("joinDisplay").style.display = "none";
+      document.getElementById("startScreen").style.display = "block";
+      document.getElementById("connectionSelection").style.display = "block";
+      resetGame();
+    }
 
-            gameRef.get("winner").on(winner => {
-                if (winner) {
-                    gameEnded = true;
-                    document.getElementById("status").innerText = winner === "Draw" ? "It's a Draw!" : `${winner} Wins!`;
-                    disableBoard();
-                    document.getElementById("playAgainBtn").style.display = (playerSymbol === "X") ? "block" : "none";
-                }
-            });
+    /***********************
+     * Global Variables & Game State
+     ***********************/
+    let myIdentity = null; // "host" or "client"
+    let myTurn = false;
+    let cardPlayedThisRound = false;
+    let gameLog = "";
 
-            gameRef.get("reset").on(resetValue => {
-                if (resetValue) handleReset();
-            });
+    let gameState = {
+      deck: [],
+      hands: { host: [], client: [] },
+      played: [null, null],
+      roundSuit: null,
+      firstPlayer: null,
+      turn: null,
+      phase: "playing",
+      pastRounds: [],
+      gameOver: false,
+      winner: null
+    };
+
+    /***********************
+     * Connection & UI Setup
+     ***********************/
+    let conn = null;
+    function setupDisconnectionHandler() {
+      conn.on("close", () => {
+        showDialog("Opponent disconnected. Returning to starting stage.", resetToInitialUI);
+      });
+    }
+
+    document.getElementById("playButton").addEventListener("click", function () {
+      document.getElementById("startScreen").style.display = "none";
+      document.getElementById("connectionSelection").style.display = "block";
+    });
+    function chooseHost() {
+      document.getElementById("connectionSelection").style.display = "none";
+      document.getElementById("hostDisplay").style.display = "block";
+      hostGame();
+    }
+    function chooseJoin() {
+      document.getElementById("connectionSelection").style.display = "none";
+      document.getElementById("joinDisplay").style.display = "block";
+    }
+    function hostGame() {
+      myIdentity = "host";
+      peer.on("connection", connection => {
+        conn = connection;
+        setupConnection();
+        setupDisconnectionHandler();
+      });
+      appendLog("Waiting for opponent to join...");
+    }
+    function joinGame() {
+      myIdentity = "client";
+      const hostId = document.getElementById("hostIdInput").value.trim();
+      if (!hostId) {
+        alert("Enter a valid host Peer ID.");
+        return;
+      }
+      conn = peer.connect(hostId);
+      setupConnection();
+      setupDisconnectionHandler();
+
+      // Wait 10 seconds; if connection isn’t open, reinitialize with TURN.
+      setTimeout(function() {
+        if (!conn || !conn.open) {
+          console.log("Direct connection failed. Retrying with TURN...");
+          usingTurn = true;
+          initializePeer(function(newPeer) {
+            peer = newPeer;
+            conn = peer.connect(hostId);
+            setupConnection();
+            setupDisconnectionHandler();
+          });
         }
-
-        function createGrid(size) {
-            let grid = document.getElementById("gameGrid");
-            grid.style.display = "grid";
-            grid.innerHTML = "";
-
-            for (let i = 0; i < size * size; i++) {
-                let cell = document.createElement("div");
-                cell.classList.add("cell");
-                cell.dataset.index = i;
-                cell.onclick = () => makeMove(i);
-                grid.appendChild(cell);
-
-                gameRef.get(`cell-${i}`).on(value => {
-                    if (value) {
-                        cell.innerText = value.symbol;
-                        cell.classList.add("taken");
-                        if (value.result) updateResult(value.result);
-                    }
-                });
-            }
+      }, 10000);
+    }
+    function setupConnection() {
+      conn.on("open", () => {
+        document.getElementById("hostDisplay").style.display = "none";
+        document.getElementById("joinDisplay").style.display = "none";
+        document.getElementById("gameArea").style.display = "block";
+        if (myIdentity === "host") {
+          appendLog("You are the host.");
+          initializeGame();
+        } else {
+          appendLog("You joined the game. Waiting for game start...");
         }
+      });
+      conn.on("data", data => {
+        handleMessage(data);
+      });
+    }
 
-        function makeMove(index) {
-            if (!playerSymbol || currentTurn !== playerSymbol || gameEnded ||!gameStarted) return;
-            gameRef.get(`cell-${index}`).once(value => {
-                if (!value) {
-                    let result = checkWinAfterMove(index, playerSymbol);
-                    gameRef.get(`cell-${index}`).put({ symbol: playerSymbol, result });
-                }
-            });
+    /***********************
+     * Host Game Functions
+     ***********************/
+    function initializeGame() {
+      gameState.deck = createDeck();
+      gameState.hands.host = gameState.deck.splice(0, 8);
+      gameState.hands.client = gameState.deck.splice(0, 8);
+      gameState.played = [null, null];
+      gameState.roundSuit = null;
+      gameState.phase = "playing";
+      gameState.firstPlayer = Math.random() < 0.5 ? "host" : "client";
+      gameState.turn = gameState.firstPlayer;
+      gameState.pastRounds = [];
+      gameState.gameOver = false;
+      gameState.winner = null;
+      myTurn = gameState.turn === myIdentity;
+      cardPlayedThisRound = false;
+      appendLog("Game started. " + (myTurn ? "Your turn." : "Opponent's turn."));
+      sendStateUpdate("init");
+      updateAllUI();
+    }
+    function createDeck() {
+      const suits = ["♥", "♦", "♣", "♠"];
+      const ranks = ["2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"];
+      let deck = [];
+      for (let s of suits) {
+        for (let r of ranks) {
+          deck.push({ suit: s, rank: r, value: ranks.indexOf(r) + 2 });
         }
+      }
+      for (let i = deck.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [deck[i], deck[j]] = [deck[j], deck[i]];
+      }
+      return deck;
+    }
 
-        function checkWinAfterMove(index, symbol) {
-            let grid = Array.from(document.getElementsByClassName("cell")).map(cell => cell.innerText || "");
-            grid[index] = symbol; 
+    /***********************
+     * UI Update Functions
+     ***********************/
+    function updateStatusUI() {
+      if (gameState.gameOver) {
+        document.getElementById("status").innerText =
+          "Game Over: " + gameState.winner + " wins!";
+      } else {
+        document.getElementById("status").innerText =
+          myTurn ? "Your turn." : "Waiting for opponent...";
+      }
+    }
+    function updateHandUI() {
+      let handDiv = document.getElementById("hand");
+      handDiv.innerHTML = "";
+      let hand = myIdentity === "host" ? gameState.hands.host : gameState.hands.client;
+      hand.forEach((card, index) => {
+        let el = createCardElement(card);
+        el.onclick = () => {
+          if (!gameState.gameOver && myTurn && !cardPlayedThisRound)
+            playCard(index);
+        };
+        handDiv.appendChild(el);
+      });
+    }
+    function createCardElement(card) {
+      let el = document.createElement("div");
+      el.className = "card";
+      el.style.color = (card.suit === "♥" || card.suit === "♦") ? "red" : "black";
+      el.innerHTML = `
+        <div class="corner top-left">${card.suit}</div>
+        <div class="corner top-right">${card.suit}</div>
+        <div class="corner bottom-left">${card.suit}</div>
+        <div class="corner bottom-right">${card.suit}</div>
+        <div class="center">${card.rank}</div>
+      `;
+      return el;
+    }
+    function displayPlayedCard(elementId, card) {
+      let container = document.getElementById(elementId);
+      let cardEl = createCardElement(card);
+      container.innerHTML = cardEl.innerHTML;
+      container.style.color = cardEl.style.color;
+      container.style.display = "block";
+    }
+    function updatePlayedCards() {
+      if (gameState.played[0]) {
+        displayPlayedCard("leaderCardDisplay", gameState.played[0].card);
+      } else {
+        document.getElementById("leaderCardDisplay").style.display = "none";
+      }
+      if (gameState.played[1]) {
+        displayPlayedCard("followerCardDisplay", gameState.played[1].card);
+      } else {
+        document.getElementById("followerCardDisplay").style.display = "none";
+      }
+    }
+    function updatePastRoundsUI() {
+      let pastDiv = document.getElementById("pastRounds");
+      pastDiv.innerHTML = "";
+      if (gameState.pastRounds.length > 0) {
+        let lastRound = gameState.pastRounds[gameState.pastRounds.length - 1];
+        let container = document.createElement("div");
+        container.style.display = "flex";
+        container.style.gap = "5px";
+        container.appendChild(createSmallCardElement(lastRound.card1));
+        container.appendChild(createSmallCardElement(lastRound.card2));
+        pastDiv.appendChild(container);
+      }
+    }
+    function createSmallCardElement(card) {
+      let el = document.createElement("div");
+      el.className = "pastCard";
+      el.style.color = (card.suit === "♥" || card.suit === "♦") ? "red" : "black";
+      el.innerText = card.rank + card.suit;
+      return el;
+    }
+    function updateLogUI(logText) {
+      document.getElementById("logBox").innerHTML = logText;
+    }
+    function updateAllUI() {
+      updateHandUI();
+      updatePlayedCards();
+      updatePastRoundsUI();
+      updateStatusUI();
+      updateLogUI(gameLog);
+      cardPlayedThisRound = false;
+    }
+    function appendLog(message) {
+      let timestamp = new Date().toLocaleTimeString();
+      gameLog += `[${timestamp}] ${message}<br>`;
+      updateLogUI(gameLog);
+    }
 
-            let winningPatterns = [
-                [0, 1, 2], [3, 4, 5], [6, 7, 8], 
-                [0, 3, 6], [1, 4, 7], [2, 5, 8], 
-                [0, 4, 8], [2, 4, 6]  
-            ];
-
-            for (let pattern of winningPatterns) {
-                let [a, b, c] = pattern;
-                if (grid[a] && grid[a] === grid[b] && grid[a] === grid[c]) {
-                    gameRef.get("winner").put(grid[a]);
-                    return grid[a];
-                }
-            }
-
-            if (grid.every(cell => cell !== "")) {
-                gameRef.get("winner").put("Draw");
-                return "Draw";
-            }
-
-            switchTurn();
-            return null;
+    /***********************
+     * Game Logic & Input Handling
+     ***********************/
+    function playCard(index) {
+      if (gameState.gameOver) {
+        alert("The game is over!");
+        return;
+      }
+      if (!myTurn) {
+        alert("Not your turn!");
+        return;
+      }
+      if (cardPlayedThisRound) return;
+      if (myIdentity === "client") {
+        // Check if client must follow suit.
+        if (gameState.played[0] !== null && gameState.roundSuit) {
+          let clientHand = gameState.hands.client;
+          let hasFollowing = clientHand.some(card => card.suit === gameState.roundSuit);
+          let selectedCard = clientHand[index];
+          if (hasFollowing && selectedCard.suit !== gameState.roundSuit) {
+            alert("You must follow suit!");
+            updateHandUI();
+            return;
+          }
         }
-
-        function switchTurn() {
-            if (!gameEnded) {
-                currentTurn = currentTurn === "X" ? "O" : "X";
-                gameRef.get("turn").put(currentTurn);
-            }
+        conn.send({ type: "playCard", cardIndex: index });
+        cardPlayedThisRound = true;
+      } else {
+        hostPlayCard(index);
+      }
+    }
+    function hostPlayCard(cardIndex) {
+      if (gameState.gameOver) {
+        alert("The game is over!");
+        return;
+      }
+      if (!myTurn) {
+        alert("Not your turn!");
+        return;
+      }
+      if (cardPlayedThisRound) return;
+      cardPlayedThisRound = true;
+      processPlayCard("host", cardIndex);
+    }
+    function processPlayCard(player, cardIndex) {
+      if (!gameState.played[0]) {
+        let hand = gameState.hands[player];
+        if (cardIndex < 0 || cardIndex >= hand.length) return;
+        let card = hand.splice(cardIndex, 1)[0];
+        gameState.played[0] = { card: card, player: player };
+        gameState.roundSuit = card.suit;
+        updatePlayedCards();
+        gameState.turn = player === "host" ? "client" : "host";
+        myTurn = gameState.turn === myIdentity;
+        updateHandUI();
+        updateStatusUI();
+        sendStateUpdate("stateUpdate");
+      } else if (!gameState.played[1]) {
+        let hand = gameState.hands[player];
+        if (cardIndex < 0 || cardIndex >= hand.length) return;
+        let matchingCards = hand.filter(c => c.suit === gameState.roundSuit);
+        let hasSuit = matchingCards.length > 0;
+        let selectedCard = hand[cardIndex];
+        if (hasSuit && selectedCard.suit !== gameState.roundSuit) {
+          alert("You must follow suit!");
+          cardPlayedThisRound = false;
+          updateHandUI();
+          return;
         }
+        let card = hand.splice(cardIndex, 1)[0];
+        gameState.played[1] = { card: card, player: player };
+        updatePlayedCards();
+        gameState.phase = "resolving";
+        evaluateRound();
+        return;
+      }
+    }
+    function evaluateRound() {
+      let p0 = gameState.played[0].card;
+      let p1 = gameState.played[1].card;
+      let roundType = (p1.suit === gameState.roundSuit) ? "normal" : "cut";
+      let loser = null;
+      if (roundType === "normal") {
+        loser = (p0.value > p1.value) ? gameState.played[0].player : gameState.played[1].player;
+      } else {
+        loser = gameState.played[0].player;
+      }
+      appendLog(
+        `Round: ${gameState.played[0].player} played ${p0.rank}${p0.suit} vs ${gameState.played[1].player} played ${p1.rank}${p1.suit}. Type: ${roundType}. Loser: ${loser}.`
+      );
+      if (roundType === "cut") {
+        gameState.hands[loser].push(p0);
+        gameState.hands[loser].push(p1);
+      }
+      gameState.firstPlayer = loser;
+      gameState.turn = loser;
+      if (gameState.deck.length > 0) {
+        gameState.hands.host.push(gameState.deck.shift());
+      }
+      if (gameState.deck.length > 0) {
+        gameState.hands.client.push(gameState.deck.shift());
+      }
+      if (roundType === "normal") {
+        gameState.pastRounds.push({ card1: p0, card2: p1 });
+      }
+      gameState.played = [null, null];
+      gameState.roundSuit = null;
+      gameState.phase = "playing";
+      myTurn = gameState.turn === myIdentity;
+      cardPlayedThisRound = false;
+      
+      // Check overall win condition.
+      if (gameState.hands.host.length === 0) {
+        gameState.gameOver = true;
+        gameState.winner = "host";
+        appendLog("Game Over: host wins!");
+        showDialog("Game Over: host wins! Starting a new game...", initializeGame);
+        return;
+      } else if (gameState.hands.client.length === 0) {
+        gameState.gameOver = true;
+        gameState.winner = "client";
+        appendLog("Game Over: client wins!");
+        showDialog("Game Over: client wins! Starting a new game...", initializeGame);
+        return;
+      }
+      
+      updateAllUI();
+      sendStateUpdate("stateUpdate");
+    }
+    function sendStateUpdate(type) {
+      if (myIdentity === "host" && conn && conn.open) {
+        conn.send({ type: type, state: gameState, log: gameLog });
+      }
+    }
 
-        function updateResult(winner) {
-            gameEnded = true;
-            document.getElementById("status").innerText = winner === "Draw" ? "It's a Draw!" : `${winner} Wins!`;
-            disableBoard();
-            document.getElementById("playAgainBtn").style.display = (playerSymbol === "X") ? "block" : "none";
+    /***********************
+     * Message Handling
+     ***********************/
+    function handleMessage(data) {
+      if (data.type === "init") {
+        gameState = data.state;
+        gameLog = data.log;
+        myTurn = (gameState.turn === myIdentity);
+        updateAllUI();
+        appendLog("Game started. " + (myTurn ? "Your turn." : "Opponent's turn."));
+      } else if (data.type === "stateUpdate") {
+        gameState = data.state;
+        gameLog = data.log;
+        myTurn = (gameState.turn === myIdentity);
+        cardPlayedThisRound = false;
+        updateAllUI();
+      } else if (data.type === "playCard") {
+        if (myIdentity === "host") {
+          processPlayCard("client", data.cardIndex);
         }
+      } else if (data.type === "error") {
+        alert(data.message);
+      }
+    }
 
-        function disableBoard() {
-            document.querySelectorAll(".cell").forEach(cell => cell.classList.add("taken"));
-        }
-
-        function resetGame() {
-            gameRef.get("reset").put(Date.now());  
-        }
-
-        function handleReset() {
-            gameEnded = false;
-            document.getElementById("status").innerText = "New game started!";
-            gameRef.get("turn").put("X");
-            gameRef.get("winner").put(null);
-
-            for (let i = 0; i < 9; i++) {
-                gameRef.get(`cell-${i}`).put(null);
-            }
-
-            document.querySelectorAll(".cell").forEach(cell => {
-                cell.innerText = "";
-                cell.classList.remove("taken");
-            });
-
-            document.getElementById("playAgainBtn").style.display = "none";
-            gameStarted = true;
-        }
-    </script>
-
+    /***********************
+     * Reset Game / UI
+     ***********************/
+    function resetGame() {
+      gameState = {
+        deck: [],
+        hands: { host: [], client: [] },
+        played: [null, null],
+        roundSuit: null,
+        firstPlayer: null,
+        turn: null,
+        phase: "playing",
+        pastRounds: [],
+        gameOver: false,
+        winner: null
+      };
+      myTurn = false;
+      cardPlayedThisRound = false;
+      gameLog = "";
+      updateLogUI(gameLog);
+      appendLog("Game reset.");
+    }
+  </script>
 </body>
 </html>
