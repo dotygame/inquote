@@ -10,7 +10,6 @@
     rel="stylesheet"
   />
   <!-- Load PeerJS from CDN -->
-  
   <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
   <style>
     /* Global Styles */
@@ -203,7 +202,7 @@
     /***********************
      * PeerJS Setup with TURN Fallback
      ***********************/
-    let usingTurn = false;     // Flag to determine whether to use TURN credentials.
+    let usingTurn = false;     // Flag indicating whether to use TURN credentials.
     let turnIceServers = null; // Will hold the TURN ICE server array when fetched.
     let peer;                  // Global Peer instance.
 
@@ -217,10 +216,12 @@
           fetch("https://turnserveracey.onrender.com/turn")
             .then(response => response.json())
             .then(data => {
-              // Build ICE server list with a STUN server plus TURN servers.
+              // data.iceServers might be an object; wrap it in an array if needed.
+              let fetchedIce = data.iceServers;
+              let iceArray = Array.isArray(fetchedIce) ? fetchedIce : [fetchedIce];
               turnIceServers = [
                 { urls: "stun:stun.cloudflare.com:3478" },
-                ...data.iceServers
+                ...iceArray
               ];
               peer = new Peer(null, { config: { iceServers: turnIceServers } });
               callback(peer);
@@ -257,7 +258,7 @@
       if (callback) callback();
     }
 
-    // Reset UI to the starting stage: show start screen and connection selection; hide game area.
+    // Reset UI to the starting stage.
     function resetToInitialUI() {
       document.getElementById("gameArea").style.display = "none";
       document.getElementById("hostDisplay").style.display = "none";
