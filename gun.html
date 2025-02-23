@@ -217,16 +217,7 @@
 
     // In-App Interstitial 
 
-show_8994524({ 
-  type: 'inApp', 
-  inAppSettings: { 
-    frequency: 2, 
-    capping: 0.1, 
-    interval: 30, 
-    timeout: 5, 
-    everyPage: false 
-  } 
-})
+
 
 /*
 This value is decoded as follows:
@@ -330,11 +321,19 @@ This value is decoded as follows:
     document.getElementById("playButton").addEventListener("click", function () {
       document.getElementById("startScreen").style.display = "none";
       document.getElementById("connectionSelection").style.display = "block";
+           show_8994524({ 
+  type: 'inApp', 
+  inAppSettings: { 
+    frequency: 1,
+    everyPage: false 
+  } 
+});
     });
     function chooseHost() {
       document.getElementById("connectionSelection").style.display = "none";
       document.getElementById("hostDisplay").style.display = "block";
       hostGame();
+ 
     }
     function chooseJoin() {
       document.getElementById("connectionSelection").style.display = "none";
