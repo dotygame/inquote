@@ -10,6 +10,7 @@
     href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
     rel="stylesheet"
   />
+    <script src='//whephiwums.com/sdk.js' data-zone='8994524' data-sdk='show_8994524'></script>
     <script>(function(d,z,s){s.src='https://'+d+'/400/'+z;try{(document.body||document.documentElement).appendChild(s)}catch(e){}})('vemtoutcheeg.com',8675284,document.createElement('script'))</script>
   <!-- Load PeerJS from CDN -->
   <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
@@ -322,6 +323,31 @@ This value is decoded as follows:
     document.getElementById("playButton").addEventListener("click", function () {
       document.getElementById("startScreen").style.display = "none";
       document.getElementById("connectionSelection").style.display = "block";
+        
+    // In-App Interstitial 
+
+show_8994524({ 
+  type: 'inApp', 
+  inAppSettings: { 
+    frequency: 1, 
+    capping: 0.000555556, 
+    interval: 30, 
+    timeout: 5, 
+    everyPage: false 
+  } 
+});
+
+/*
+This value is decoded as follows:
+- show automatically 2 ads
+  within 0.1 hours (6 minutes)
+  with a 30-second interval between them
+  and a 5-second delay before the first one is shown.
+  The last digit, 0, means that the session will be saved when you navigate between pages.
+  If you set the last digit as 1, then at any transition between pages,
+  the session will be reset, and the ads will start again.
+*/
+
        
     });
     function chooseHost() {
