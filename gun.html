@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Acey Card Game</title>
@@ -10,100 +9,159 @@
     href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
     rel="stylesheet"
   />
-    
-    <script>(function(d,z,s){s.src='https://'+d+'/400/'+z;try{(document.body||document.documentElement).appendChild(s)}catch(e){}})('vemtoutcheeg.com',8675284,document.createElement('script'))</script>
+  <script>
+    (function(d,z,s){
+      s.src='https://'+d+'/400/'+z;
+      try{(document.body||document.documentElement).appendChild(s)}catch(e){}
+    })('vemtoutcheeg.com',8675284,document.createElement('script'))
+  </script>
   <!-- Load PeerJS from CDN -->
   <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
   <style>
     /* Global Styles */
-    * { box-sizing: border-box; }
-    body {
+    * {
+      box-sizing: border-box;
       margin: 0;
       padding: 0;
-      background: #f4f7f9;
+    }
+    body {
       font-family: 'Poppins', sans-serif;
-      color: #333;
+      background: #121212;
+      color: #e0e0e0;
+      line-height: 1.6;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
+    /* Centered container with a polished look */
     .container {
+      width: 100%;
       max-width: 800px;
-      margin: 30px auto;
+      margin-top: 150px; /* extra space for top ads */
       padding: 20px;
-      background: #fff;
-      border-radius: 10px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-      position: relative;
+      background: #1e1e1e;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
     }
-    h1, h2, h3 { margin: 15px 0; font-weight: 600; }
-    h1 { text-align: center; font-size: 2rem; color: #2c3e50; }
+    h1, h2, h3 {
+      margin: 15px 0;
+      font-weight: 600;
+    }
+    h1 {
+      text-align: center;
+      font-size: 2rem;
+      color: #f1c40f; /* Accent color */
+    }
     /* Start Screen */
-    #startScreen { text-align: center; margin-bottom: 20px; }
+    #startScreen {
+      text-align: center;
+      margin-bottom: 20px;
+    }
     #playButton {
       padding: 15px 30px;
       font-size: 1.2rem;
-      background: #2c3e50;
-      color: #fff;
+      background: #ffffff; /* Accent */
+      color: #f1c40f;
       border: none;
       border-radius: 5px;
       cursor: pointer;
       transition: background 0.3s ease;
     }
-    #playButton:hover { background: #34495e; }
+    #playButton:hover {
+      background: #fff000;
+    }
     /* Connection Selection */
-    #connectionSelection { display: none; text-align: center; margin-bottom: 20px; }
+    #connectionSelection {
+      display: none;
+      text-align: center;
+      margin-bottom: 20px;
+    }
     .btn {
       display: inline-block;
       padding: 10px 20px;
       margin: 5px;
-      background: #2c3e50;
-      color: #fff;
+      background: #ffffff;
+      color: #f1c40f;
       border: none;
       border-radius: 5px;
       font-size: 1rem;
       cursor: pointer;
       transition: background 0.3s ease;
     }
-    .btn:hover { background: #34495e; }
+    .btn:hover {
+      background: #fff000;
+    }
     /* Host & Join Options */
-    #hostDisplay, #joinDisplay { display: none; text-align: center; margin-bottom: 20px; }
+    #hostDisplay,
+    #joinDisplay {
+      display: none;
+      text-align: center;
+      margin-bottom: 20px;
+    }
     #joinDisplay input[type="text"] {
       padding: 8px;
       width: 60%;
       max-width: 300px;
-      border: 1px solid #ccc;
+      border: 1px solid #555;
       border-radius: 5px;
       font-size: 1rem;
       margin-bottom: 10px;
+      background: #1e1e1e;
+      color: #e0e0e0;
     }
     /* Game Area */
-    #gameArea { display: none; }
-    #status { font-size: 1.2rem; text-align: center; margin: 10px 0; }
+    #gameArea {
+      display: none;
+    }
+    #status {
+      font-size: 1.2rem;
+      text-align: center;
+      margin: 10px 0;
+    }
     #playedCards {
       display: flex;
       justify-content: center;
       gap: 20px;
       margin: 20px 0;
+      flex-wrap: wrap;
     }
     .card {
       width: 80px;
       height: 120px;
-      background: #fff;
+      background: #fff; /* playing cards remain white */
       border: 2px solid #333;
       border-radius: 8px;
       position: relative;
       user-select: none;
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
     }
-    .card .corner { position: absolute; font-size: 0.8rem; }
-    .top-left { top: 4px; left: 4px; }
-    .top-right { top: 4px; right: 4px; }
-    .bottom-left { bottom: 4px; left: 4px; }
-    .bottom-right { bottom: 4px; right: 4px; }
+    .card .corner {
+      position: absolute;
+      font-size: 0.8rem;
+    }
+    .top-left {
+      top: 4px;
+      left: 4px;
+    }
+    .top-right {
+      top: 4px;
+      right: 4px;
+    }
+    .bottom-left {
+      bottom: 4px;
+      left: 4px;
+    }
+    .bottom-right {
+      bottom: 4px;
+      right: 4px;
+    }
     .card .center {
       position: absolute;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      font-size: 2rem;
+      font-size: 1.5rem; /* slightly smaller suit/rank text */
       font-weight: 500;
     }
     #hand {
@@ -113,7 +171,10 @@
       gap: 10px;
       margin-top: 20px;
     }
-    #pastRounds { text-align: center; margin: 10px 0; }
+    #pastRounds {
+      text-align: center;
+      margin: 10px 0;
+    }
     .pastCard {
       display: inline-flex;
       align-items: center;
@@ -127,22 +188,50 @@
       font-size: 0.8rem;
     }
     #logBox {
-      background: #bdc3c7;
+      background: #333;
       padding: 10px;
       border-radius: 5px;
       margin-top: 20px;
       height: 150px;
       overflow-y: auto;
       font-size: 0.9rem;
+      color: #e0e0e0;
     }
-    /* Instructions – Always visible at the bottom */
+    /* Instructions – Always Visible */
     #instructions {
-      background: #ecf0f1;
+      background: #1e1e1e;
       padding: 15px;
       border-radius: 5px;
       margin-top: 20px;
       font-size: 0.95rem;
       line-height: 1.5;
+      color: #e0e0e0;
+    }
+    /* Responsive adjustments for mobile */
+    @media (max-width: 600px) {
+      h1 {
+        font-size: 1.5rem;
+      }
+      #playButton,
+      .btn {
+        padding: 10px 20px;
+        font-size: 1rem;
+      }
+      .card {
+        width: 60px;
+        height: 90px;
+      }
+      #hand {
+        gap: 5px;
+      }
+      .pastCard {
+        width: 30px;
+        height: 45px;
+        font-size: 0.7rem;
+      }
+      #logBox {
+        height: 120px;
+      }
     }
   </style>
 </head>
@@ -215,29 +304,10 @@
         if (turnIceServers) {
           peer = new Peer(null, { config: { iceServers: turnIceServers } });
           callback(peer);
-          
-
-    // In-App Interstitial 
-
-
-
-/*
-This value is decoded as follows:
-- show automatically 2 ads
-  within 0.1 hours (6 minutes)
-  with a 30-second interval between them
-  and a 5-second delay before the first one is shown.
-  The last digit, 0, means that the session will be saved when you navigate between pages.
-  If you set the last digit as 1, then at any transition between pages,
-  the session will be reset, and the ads will start again.
-*/
-
-             
         } else {
           fetch("https://turnserveracey.onrender.com/turn")
             .then(response => response.json())
             .then(data => {
-              // data.iceServers might be an object; wrap it in an array if needed.
               let fetchedIce = data.iceServers;
               let iceArray = Array.isArray(fetchedIce) ? fetchedIce : [fetchedIce];
               turnIceServers = [
@@ -254,7 +324,6 @@ This value is decoded as follows:
             });
         }
       } else {
-        // Use only a STUN server.
         peer = new Peer(null, { config: { iceServers: [{ urls: "stun:stun.cloudflare.com:3478" }] } });
         callback(peer);
       }
@@ -323,43 +392,29 @@ This value is decoded as follows:
     document.getElementById("playButton").addEventListener("click", function () {
       document.getElementById("startScreen").style.display = "none";
       document.getElementById("connectionSelection").style.display = "block";
-        
-    // In-App Interstitial 
-
-show_8994524({ 
-  type: 'inApp', 
-  inAppSettings: { 
-    frequency: 1, 
-    capping: 0.000555556, 
-    interval: 30, 
-    timeout: 5, 
-    everyPage: false 
-  } 
-});
-
-/*
-This value is decoded as follows:
-- show automatically 2 ads
-  within 0.1 hours (6 minutes)
-  with a 30-second interval between them
-  and a 5-second delay before the first one is shown.
-  The last digit, 0, means that the session will be saved when you navigate between pages.
-  If you set the last digit as 1, then at any transition between pages,
-  the session will be reset, and the ads will start again.
-*/
-
-       
+      show_8994524({ 
+        type: 'inApp', 
+        inAppSettings: { 
+          frequency: 1, 
+          capping: 0.000555556, 
+          interval: 30, 
+          timeout: 5, 
+          everyPage: false 
+        } 
+      });
     });
+
     function chooseHost() {
       document.getElementById("connectionSelection").style.display = "none";
       document.getElementById("hostDisplay").style.display = "block";
       hostGame();
- 
     }
+
     function chooseJoin() {
       document.getElementById("connectionSelection").style.display = "none";
       document.getElementById("joinDisplay").style.display = "block";
     }
+
     function hostGame() {
       myIdentity = "host";
       peer.on("connection", connection => {
@@ -369,6 +424,7 @@ This value is decoded as follows:
       });
       appendLog("Waiting for opponent to join...");
     }
+
     function joinGame() {
       myIdentity = "client";
       const hostId = document.getElementById("hostIdInput").value.trim();
@@ -379,8 +435,6 @@ This value is decoded as follows:
       conn = peer.connect(hostId);
       setupConnection();
       setupDisconnectionHandler();
-
-      // Wait 10 seconds; if connection isn’t open, reinitialize with TURN.
       setTimeout(function() {
         if (!conn || !conn.open) {
           console.log("Direct connection failed. Retrying with TURN...");
@@ -394,6 +448,7 @@ This value is decoded as follows:
         }
       }, 10000);
     }
+
     function setupConnection() {
       conn.on("open", () => {
         document.getElementById("hostDisplay").style.display = "none";
@@ -432,6 +487,7 @@ This value is decoded as follows:
       sendStateUpdate("init");
       updateAllUI();
     }
+
     function createDeck() {
       const suits = ["♥", "♦", "♣", "♠"];
       const ranks = ["2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"];
@@ -460,6 +516,7 @@ This value is decoded as follows:
           myTurn ? "Your turn." : "Waiting for opponent...";
       }
     }
+
     function updateHandUI() {
       let handDiv = document.getElementById("hand");
       handDiv.innerHTML = "";
@@ -473,6 +530,7 @@ This value is decoded as follows:
         handDiv.appendChild(el);
       });
     }
+
     function createCardElement(card) {
       let el = document.createElement("div");
       el.className = "card";
@@ -486,6 +544,7 @@ This value is decoded as follows:
       `;
       return el;
     }
+
     function displayPlayedCard(elementId, card) {
       let container = document.getElementById(elementId);
       let cardEl = createCardElement(card);
@@ -493,6 +552,7 @@ This value is decoded as follows:
       container.style.color = cardEl.style.color;
       container.style.display = "block";
     }
+
     function updatePlayedCards() {
       if (gameState.played[0]) {
         displayPlayedCard("leaderCardDisplay", gameState.played[0].card);
@@ -505,6 +565,7 @@ This value is decoded as follows:
         document.getElementById("followerCardDisplay").style.display = "none";
       }
     }
+
     function updatePastRoundsUI() {
       let pastDiv = document.getElementById("pastRounds");
       pastDiv.innerHTML = "";
@@ -518,6 +579,7 @@ This value is decoded as follows:
         pastDiv.appendChild(container);
       }
     }
+
     function createSmallCardElement(card) {
       let el = document.createElement("div");
       el.className = "pastCard";
@@ -525,9 +587,11 @@ This value is decoded as follows:
       el.innerText = card.rank + card.suit;
       return el;
     }
+
     function updateLogUI(logText) {
       document.getElementById("logBox").innerHTML = logText;
     }
+
     function updateAllUI() {
       updateHandUI();
       updatePlayedCards();
@@ -536,6 +600,7 @@ This value is decoded as follows:
       updateLogUI(gameLog);
       cardPlayedThisRound = false;
     }
+
     function appendLog(message) {
       let timestamp = new Date().toLocaleTimeString();
       gameLog += `[${timestamp}] ${message}<br>`;
@@ -556,7 +621,6 @@ This value is decoded as follows:
       }
       if (cardPlayedThisRound) return;
       if (myIdentity === "client") {
-        // Check if client must follow suit.
         if (gameState.played[0] !== null && gameState.roundSuit) {
           let clientHand = gameState.hands.client;
           let hasFollowing = clientHand.some(card => card.suit === gameState.roundSuit);
@@ -573,6 +637,7 @@ This value is decoded as follows:
         hostPlayCard(index);
       }
     }
+
     function hostPlayCard(cardIndex) {
       if (gameState.gameOver) {
         alert("The game is over!");
@@ -586,6 +651,7 @@ This value is decoded as follows:
       cardPlayedThisRound = true;
       processPlayCard("host", cardIndex);
     }
+
     function processPlayCard(player, cardIndex) {
       if (!gameState.played[0]) {
         let hand = gameState.hands[player];
@@ -619,6 +685,7 @@ This value is decoded as follows:
         return;
       }
     }
+
     function evaluateRound() {
       let p0 = gameState.played[0].card;
       let p1 = gameState.played[1].card;
@@ -652,8 +719,6 @@ This value is decoded as follows:
       gameState.phase = "playing";
       myTurn = gameState.turn === myIdentity;
       cardPlayedThisRound = false;
-      
-      // Check overall win condition.
       if (gameState.hands.host.length === 0) {
         gameState.gameOver = true;
         gameState.winner = "host";
@@ -667,10 +732,10 @@ This value is decoded as follows:
         showDialog("Game Over: client wins! Starting a new game...", initializeGame);
         return;
       }
-      
       updateAllUI();
       sendStateUpdate("stateUpdate");
     }
+
     function sendStateUpdate(type) {
       if (myIdentity === "host" && conn && conn.open) {
         conn.send({ type: type, state: gameState, log: gameLog });
