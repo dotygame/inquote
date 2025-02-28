@@ -2,11 +2,14 @@
 <html>
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Interactive Collector Card Maker</title>
+  <!-- Google Fonts: Poppins -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;700&display=swap" rel="stylesheet">
   <style>
     /* Base styles */
     body {
-      font-family: Arial, sans-serif;
+      font-family: 'Poppins', sans-serif;
       margin: 20px;
       background: #f2f2f2;
       color: #333;
@@ -18,23 +21,46 @@
     /* Controls styling */
     #controls {
       background: #fff;
-      padding: 15px;
-      margin-bottom: 20px;
-      border-radius: 5px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      padding: 20px;
+      margin: 0 auto 20px auto;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
       max-width: 1000px;
-      margin-left: auto;
-      margin-right: auto;
     }
     #controls p {
       font-size: 14px;
-      margin-bottom: 10px;
+      margin-bottom: 15px;
+      line-height: 1.5;
     }
     #controls label, 
     #controls select, 
     #controls button {
       margin: 5px;
       font-size: 14px;
+    }
+    /* New grid resolution display */
+    #gridResolution {
+      font-weight: 500;
+      margin-left: 10px;
+      vertical-align: middle;
+    }
+    /* Button styles */
+    button {
+      background-color: #007BFF;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      padding: 8px 12px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    select {
+      padding: 4px 8px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
     }
     /* Sheet switch styling */
     #sheetSwitch {
@@ -69,7 +95,7 @@
       position: relative;
       overflow: hidden;
       border: 2px dashed #000;
-      border-radius: 3px;
+      border-radius: 4px;
       background: #fff;
     }
     /* Image container and image */
@@ -96,18 +122,18 @@
       display: none;
       max-width: 500px;
       margin: 20px auto;
-      padding: 10px;
+      padding: 15px;
       border: 1px solid #ccc;
       background: #fff;
-      border-radius: 5px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     }
     #inlineAdvancedControls h3 {
       margin-top: 0;
       text-align: center;
     }
     #inlineAdvancedControls div {
-      margin: 5px 0;
+      margin: 8px 0;
     }
     /* Modal (Preview) styling */
     .modal {
@@ -119,14 +145,19 @@
       justify-content: center;
       align-items: center;
       z-index: 1000;
+      padding: 10px;
     }
     .modal-content {
       background: #fff;
       padding: 20px;
-      border-radius: 5px;
+      border-radius: 8px;
       width: 95%;
-      max-width: 700px;
+      max-width: 1000px;
+      min-height: 650px;       /* Increased minimum height */
+      max-height: 95vh;
+      overflow-y: auto;
       position: relative;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
     }
     .close-btn {
       position: absolute;
@@ -160,6 +191,25 @@
     .guide.vertical {
       width: 1px;
       height: 100%;
+    }
+    /* Responsive / Mobile Friendly */
+    @media (max-width: 768px) {
+      body {
+        margin: 10px;
+      }
+      #controls {
+        padding: 15px;
+      }
+      .a4-sheet {
+        width: 100%;
+        height: auto;
+      }
+      .modal-content {
+        padding: 15px;
+      }
+      h1, h2 {
+        font-size: 1.5em;
+      }
     }
   </style>
 </head>
@@ -195,14 +245,15 @@
       <span id="radiusValue">0</span> mm
     </label>
     <br><br>
-    <!-- Grid layout option -->
+    <!-- Grid layout option with resolution display -->
     <label>
       Grid Layout:
       <select id="gridLayoutSelect">
          <option value="3x3">3 x 3 (9 cards)</option>
-         <option value="3x2">3 x 2 (6 cards)</option>
          <option value="2x3">2 x 3 (6 cards)</option>
+         <option value="2x2">2 x 2 (4 cards)</option>
       </select>
+      <span id="gridResolution"></span>
     </label>
     <br><br>
     <!-- Copy design options -->
@@ -287,8 +338,8 @@
           <input type="checkbox" id="toggleGuides" checked>
         </label>
       </div>
-      <!-- The preview container now applies the same classes as the original A4 sheets -->
-      <div id="previewContainer" style="position: relative; width:210mm; height:297mm; margin:0 auto; border:1px solid #000;">
+      <!-- Updated Preview Container with responsive aspect ratio -->
+      <div id="previewContainer" style="position: relative; width:100%; max-width:210mm; aspect-ratio:210 / 297; margin:0 auto; border:1px solid #000;">
         <div id="previewFront" class="a4-sheet" style="position: absolute; top:0; left:0; width:100%; height:100%;">
           <!-- Cloned front side -->
         </div>
@@ -325,13 +376,14 @@
     const gridLayoutSelect = document.getElementById('gridLayoutSelect');
     const copyFrontSelect = document.getElementById('copyFrontSelect');
     const copyBackSelect = document.getElementById('copyBackSelect');
+    const gridResolutionDisplay = document.getElementById('gridResolution');
     let currentEditingCard = null; // currently editing card
 
-    /* Grid settings */
+    /* Grid settings: removed "3x2" and added "2x2" */
     const gridSettings = {
       "3x3": { columns: 3, rows: 3, cardWidth: "63mm", cardHeight: "88mm" },
-      "3x2": { columns: 3, rows: 2, cardWidth: "63mm", cardHeight: "141mm" },
-      "2x3": { columns: 2, rows: 3, cardWidth: "97mm", cardHeight: "92mm" }
+      "2x3": { columns: 2, rows: 3, cardWidth: "97mm", cardHeight: "92mm" },
+      "2x2": { columns: 2, rows: 2, cardWidth: "100mm", cardHeight: "140mm" }
     };
 
     /* Generate grid for a container */
@@ -521,6 +573,18 @@
       generateGrid(frontContainer, layout);
       generateGrid(backContainer, layout);
       updateCardBorders();
+      // Update resolution display
+      const settings = gridSettings[layout];
+      gridResolutionDisplay.textContent = `Resolution: ${settings.cardWidth} x ${settings.cardHeight}`;
+    });
+
+    /* Initialize grid resolution display on load */
+    window.addEventListener('load', function() {
+      generateGrid(frontContainer, gridLayoutSelect.value);
+      generateGrid(backContainer, gridLayoutSelect.value);
+      updateCardBorders();
+      const settings = gridSettings[gridLayoutSelect.value];
+      gridResolutionDisplay.textContent = `Resolution: ${settings.cardWidth} x ${settings.cardHeight}`;
     });
 
     /* Copy design functions (modified to also copy properties) */
@@ -538,7 +602,6 @@
       cards.forEach(card => {
         const img = card.querySelector('.img-container img');
         img.src = sourceImg.src;
-        // Copy the inline transform, background, and object-fit properties
         card.querySelector('.img-container').style.transform = sourceTransform;
         card.style.backgroundColor = sourceBackground;
         img.style.objectFit = sourceObjectFit;
@@ -591,9 +654,9 @@
     function getScaleFromSlider(val) {
       val = parseFloat(val);
       if (val >= 0) {
-        return 1 + (val / 5) * 4;  // When val = 5, scale = 5
+        return 1 + (val / 5) * 4;
       } else {
-        return 1 / (1 + (Math.abs(val) / 5) * 4);  // When val = -5, scale ≈ 0.2
+        return 1 / (1 + (Math.abs(val) / 5) * 4);
       }
     }
 
@@ -665,7 +728,7 @@
     });
 
     function rgbToHex(rgb) {
-      const result = /^rgb(\d+),\s*(\d+),\s*(\d+)$/.exec(rgb);
+      const result = /^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/.exec(rgb);
       return result ? "#" +
         ("0" + parseInt(result[1],10).toString(16)).slice(-2) +
         ("0" + parseInt(result[2],10).toString(16)).slice(-2) +
@@ -744,6 +807,12 @@
     closePreviewModal.addEventListener('click', function() {
       previewModal.style.display = "none";
     });
+    // Close modal when clicking outside the modal content
+    previewModal.addEventListener('click', function(e) {
+      if (e.target === previewModal) {
+        previewModal.style.display = "none";
+      }
+    });
     toggleGrid.addEventListener('change', function() {
       previewGrid.style.display = toggleGrid.checked ? "block" : "none";
     });
@@ -785,13 +854,6 @@
         pdf.addImage(backImgData, 'PNG', 0, 0, 210, 297);
         pdf.save('collector_cards.pdf');
       });
-    });
-
-    /* Initialize grids on load */
-    window.addEventListener('load', function() {
-      generateGrid(frontContainer, gridLayoutSelect.value);
-      generateGrid(backContainer, gridLayoutSelect.value);
-      updateCardBorders();
     });
   </script>
 </body>
