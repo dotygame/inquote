@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Interactive Collector Card Maker</title>
+  <style>
+    /* Base styles */
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background: #f2f2f2;
+      color: #333;
+    }
+    h1, h2 {
+      text-align: center;
+      margin: 0.5em 0;
+    }
+    /* Controls styling */
+    #controls {
+      background: #fff;
+      padding: 15px;
+      margin-bottom: 20px;
+      border-radius: 5px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      max-width: 1000px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    #controls p {
+      font-size: 14px;
+      margin-bottom: 10px;
+    }
+    #controls label, 
+    #controls select, 
+    #controls button {
+      margin: 5px;
+      font-size: 14px;
+    }
+    /* Sheet switch styling */
+    #sheetSwitch {
+      margin: 10px 0;
+      text-align: center;
+    }
+    #sheetSwitch label {
+      margin: 0 10px;
+      font-weight: bold;
+    }
+    /* A4 sheet container */
+    .a4-sheet {
+      width: 210mm;
+      height: 297mm;
+      border: 1px solid #000;
+      padding: 5mm;
+      box-sizing: border-box;
+      margin: 0 auto 20px auto;
+      position: relative;
+      display: grid;
+      gap: 5mm;
+      grid-template-columns: repeat(3, var(--card-width, 63mm));
+      grid-template-rows: repeat(3, var(--card-height, 88mm));
+      justify-content: center;
+      align-content: center;
+      background: #fff;
+    }
+    /* Card styling */
+    .card {
+      width: var(--card-width, 63mm);
+      height: var(--card-height, 88mm);
+      position: relative;
+      overflow: hidden;
+      border: 2px dashed #000;
+      border-radius: 3px;
+      background: #fff;
+    }
+    /* Image container and image */
+    .img-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+    }
+    .img-container img {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: auto;
+      user-select: none;
+      touch-action: none;
+      object-fit: contain;
+    }
+    /* Inline Advanced Controls styling */
+    #inlineAdvancedControls {
+      display: none;
+      max-width: 500px;
+      margin: 20px auto;
+      padding: 10px;
+      border: 1px solid #ccc;
+      background: #fff;
+      border-radius: 5px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    #inlineAdvancedControls h3 {
+      margin-top: 0;
+      text-align: center;
+    }
+    #inlineAdvancedControls div {
+      margin: 5px 0;
+    }
+    /* Modal (Preview) styling */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.5);
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    .modal-content {
+      background: #fff;
+      padding: 20px;
+      border-radius: 5px;
+      width: 95%;
+      max-width: 700px;
+      position: relative;
+    }
+    .close-btn {
+      position: absolute;
+      right: 10px;
+      top: 10px;
+      cursor: pointer;
+      font-size: 20px;
+      color: #888;
+    }
+    /* Preview grid overlay and guides */
+    .grid-overlay {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      background-image: 
+         linear-gradient(rgba(0,0,0,0.1) 1px, transparent 1px),
+         linear-gradient(90deg, rgba(0,0,0,0.1) 1px, transparent 1px);
+      background-size: 20px 20px;
+    }
+    .guide {
+      position: absolute;
+      background: rgba(255,0,0,0.5);
+      pointer-events: none;
+    }
+    .guide.horizontal {
+      height: 1px;
+      width: 100%;
+    }
+    .guide.vertical {
+      width: 1px;
+      height: 100%;
+    }
+  </style>
+</head>
+<body>
+  <h1>Interactive Collector Card Maker</h1>
+  <div id="controls">
+    <p>
+      <strong>Instructions:</strong>
+      For empty cards, tap to upload one or more images (they will fill subsequent empty cards).  
+      For cards with an image, a single tap changes the image while a double‑tap opens advanced controls.  
+      Use pinch/drag on touch devices to zoom/pan and long‑press (≈1 sec) to reset.
+    </p>
+    <!-- Common image upload buttons -->
+    <button id="uploadFrontCommonBtn">Upload Common Image for Front</button>
+    <button id="uploadBackCommonBtn">Upload Common Image for Back</button>
+    <br><br>
+    <!-- Border options -->
+    <label>
+      Show Card Border:
+      <input type="checkbox" id="toggleBorder" checked>
+    </label>
+    <label>
+      Border Style:
+      <select id="borderStyleSelect">
+         <option value="dashed">Dashed</option>
+         <option value="solid">Solid</option>
+         <option value="none">None</option>
+      </select>
+    </label>
+    <label>
+      Card Border Radius (mm):
+      <input type="range" id="borderRadiusInput" min="0" max="10" value="0" step="0.5">
+      <span id="radiusValue">0</span> mm
+    </label>
+    <br><br>
+    <!-- Grid layout option -->
+    <label>
+      Grid Layout:
+      <select id="gridLayoutSelect">
+         <option value="3x3">3 x 3 (9 cards)</option>
+         <option value="3x2">3 x 2 (6 cards)</option>
+         <option value="2x3">2 x 3 (6 cards)</option>
+      </select>
+    </label>
+    <br><br>
+    <!-- Copy design options -->
+    <label>
+      Copy Front Design from Card:
+      <select id="copyFrontSelect"></select>
+      <button id="copyFrontBtn">Copy Front Design</button>
+    </label>
+    <br>
+    <label>
+      Copy Back Design from Card:
+      <select id="copyBackSelect"></select>
+      <button id="copyBackBtn">Copy Back Design</button>
+    </label>
+    <br><br>
+    <!-- Sheet switch: Front, Back, or Both -->
+    <div id="sheetSwitch">
+      <label><input type="radio" name="sheetDisplay" value="both" checked> Both Sheets</label>
+      <label><input type="radio" name="sheetDisplay" value="front"> Front Only</label>
+      <label><input type="radio" name="sheetDisplay" value="back"> Back Only</label>
+    </div>
+    <br>
+    <!-- Preview and PDF buttons -->
+    <button id="previewModeBtn">Preview &amp; Align Cards</button>
+    <button id="downloadPDFBtn">Download PDF (Front &amp; Back)</button>
+  </div>
+
+  <!-- Inline Advanced Controls (hidden by default) -->
+  <div id="inlineAdvancedControls">
+    <h3>Advanced Card Controls</h3>
+    <div>
+      <label for="zoomSlider">Zoom (–5 to 5):</label>
+      <input type="range" id="zoomSlider" min="-5" max="5" step="0.1" value="0">
+      <span id="zoomValue">1.00</span>
+    </div>
+    <div>
+      <label for="xOffsetSlider">Horizontal Offset:</label>
+      <input type="range" id="xOffsetSlider" min="-100" max="100" step="1" value="0">
+      <span id="xOffsetValue">0</span>px
+    </div>
+    <div>
+      <label for="yOffsetSlider">Vertical Offset:</label>
+      <input type="range" id="yOffsetSlider" min="-100" max="100" step="1" value="0">
+      <span id="yOffsetValue">0</span>px
+    </div>
+    <div>
+      <label for="bgColorPicker">Card Background Color:</label>
+      <input type="color" id="bgColorPicker" value="#ffffff">
+    </div>
+    <div>
+      <label><input type="checkbox" id="fillCardCheckbox"> Fill Card with Image</label>
+    </div>
+    <div>
+      <label><input type="checkbox" id="autoFillBgCheckbox"> Auto Fill Background</label>
+    </div>
+    <div>
+      <button id="changeImageBtn">Change Image</button>
+      <button id="closeInlineAdvanced">Close</button>
+    </div>
+  </div>
+
+  <!-- Front Side A4 Sheet -->
+  <h2>Front Side (A4 Sheet)</h2>
+  <div id="a4Front" class="a4-sheet"></div>
+
+  <!-- Back Side A4 Sheet -->
+  <h2>Back Side (A4 Sheet)</h2>
+  <div id="a4Back" class="a4-sheet"></div>
+
+  <!-- Preview Mode Modal -->
+  <div id="previewModal" class="modal">
+    <div class="modal-content">
+      <span class="close-btn" id="closePreviewModal">&times;</span>
+      <h3>Preview &amp; Align Cards</h3>
+      <div style="text-align:center; margin-bottom:10px;">
+        <label>
+          Show Grid:
+          <input type="checkbox" id="toggleGrid" checked>
+        </label>
+        <label>
+          Show Guides:
+          <input type="checkbox" id="toggleGuides" checked>
+        </label>
+      </div>
+      <!-- The preview container now applies the same classes as the original A4 sheets -->
+      <div id="previewContainer" style="position: relative; width:210mm; height:297mm; margin:0 auto; border:1px solid #000;">
+        <div id="previewFront" class="a4-sheet" style="position: absolute; top:0; left:0; width:100%; height:100%;">
+          <!-- Cloned front side -->
+        </div>
+        <div id="previewBack" class="a4-sheet" style="position: absolute; top:0; left:0; width:100%; height:100%;">
+          <!-- Cloned back side, with adjustable offset -->
+        </div>
+        <div id="previewGrid" class="grid-overlay"></div>
+        <div id="guideHorizontal" class="guide horizontal" style="top:50%;"></div>
+        <div id="guideVertical" class="guide vertical" style="left:50%;"></div>
+      </div>
+      <div style="margin-top:10px; text-align:center;">
+        <label for="previewXOffset">Back X Offset:</label>
+        <input type="range" id="previewXOffset" min="-50" max="50" step="1" value="0">
+        <span id="previewXOffsetVal">0</span>px
+        <br>
+        <label for="previewYOffset">Back Y Offset:</label>
+        <input type="range" id="previewYOffset" min="-50" max="50" step="1" value="0">
+        <span id="previewYOffsetVal">0</span>px
+        <br><br>
+        <button id="applyAlignmentBtn">Apply Alignment</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Required Libraries -->
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://unpkg.com/panzoom@9.4.0/dist/panzoom.min.js"></script>
+  <script>
+    /* Global variables */
+    const panzoomInstances = new Map();
+    const frontContainer = document.getElementById('a4Front');
+    const backContainer = document.getElementById('a4Back');
+    const gridLayoutSelect = document.getElementById('gridLayoutSelect');
+    const copyFrontSelect = document.getElementById('copyFrontSelect');
+    const copyBackSelect = document.getElementById('copyBackSelect');
+    let currentEditingCard = null; // currently editing card
+
+    /* Grid settings */
+    const gridSettings = {
+      "3x3": { columns: 3, rows: 3, cardWidth: "63mm", cardHeight: "88mm" },
+      "3x2": { columns: 3, rows: 2, cardWidth: "63mm", cardHeight: "141mm" },
+      "2x3": { columns: 2, rows: 3, cardWidth: "97mm", cardHeight: "92mm" }
+    };
+
+    /* Generate grid for a container */
+    function generateGrid(container, layout) {
+      container.innerHTML = "";
+      const settings = gridSettings[layout];
+      container.style.setProperty("--card-width", settings.cardWidth);
+      container.style.setProperty("--card-height", settings.cardHeight);
+      container.style.gridTemplateColumns = `repeat(${settings.columns}, var(--card-width))`;
+      container.style.gridTemplateRows = `repeat(${settings.rows}, var(--card-height))`;
+      const totalCards = settings.columns * settings.rows;
+      for (let i = 0; i < totalCards; i++) {
+        const card = document.createElement('div');
+        card.className = "card";
+        const imgContainer = document.createElement('div');
+        imgContainer.className = "img-container";
+        const img = document.createElement('img');
+        img.alt = container.id === "a4Front" ? "Front Card" : "Back Card";
+        imgContainer.appendChild(img);
+        card.appendChild(imgContainer);
+        container.appendChild(card);
+        attachCardEvents(card);
+      }
+      updateCopyDropdowns(totalCards);
+    }
+
+    /* Update copy design dropdowns */
+    function updateCopyDropdowns(totalCards) {
+      [copyFrontSelect, copyBackSelect].forEach(select => {
+        select.innerHTML = "";
+        for (let i = 1; i <= totalCards; i++) {
+          const option = document.createElement("option");
+          option.value = i - 1;
+          option.textContent = "Card " + i;
+          select.appendChild(option);
+        }
+      });
+    }
+
+    /* Attach events to card */
+    function attachCardEvents(card) {
+      const img = card.querySelector('.img-container img');
+      let clickTimeout = null;
+      card.addEventListener('click', function(e) {
+        if (clickTimeout !== null) {
+          clearTimeout(clickTimeout);
+          clickTimeout = null;
+          openInlineAdvancedControls(card);
+        } else {
+          clickTimeout = setTimeout(function() {
+            uploadImagesForCard(card, img.src ? false : true);
+            clickTimeout = null;
+          }, 250);
+        }
+      });
+      let pressTimer = null;
+      const resetDelay = 1000;
+      card.addEventListener('mousedown', () => {
+        pressTimer = setTimeout(() => {
+          if (panzoomInstances.has(card)) {
+            panzoomInstances.get(card).reset();
+          }
+        }, resetDelay);
+      });
+      card.addEventListener('mouseup', () => clearTimeout(pressTimer));
+      card.addEventListener('mouseleave', () => clearTimeout(pressTimer));
+      card.addEventListener('touchstart', () => {
+        pressTimer = setTimeout(() => { 
+          if (panzoomInstances.has(card)) {
+            panzoomInstances.get(card).reset();
+          }
+        }, resetDelay);
+      });
+      card.addEventListener('touchend', () => clearTimeout(pressTimer));
+    }
+
+    /* Image upload functions */
+    function uploadImagesForCard(card, allowMultiple) {
+      const fileInput = document.createElement('input');
+      fileInput.type = 'file';
+      fileInput.accept = 'image/*';
+      fileInput.style.display = 'none';
+      fileInput.multiple = allowMultiple;
+      fileInput.addEventListener('change', function() {
+        if (!fileInput.files.length) return;
+        if (allowMultiple) {
+          assignImagesToCards(card, fileInput.files);
+        } else {
+          assignImageToCard(card, fileInput.files[0]);
+        }
+      });
+      document.body.appendChild(fileInput);
+      fileInput.click();
+      fileInput.remove();
+    }
+
+    function assignImageToCard(card, file) {
+      const img = card.querySelector('.img-container img');
+      const reader = new FileReader();
+      reader.onload = function(ev) {
+        img.src = ev.target.result;
+        img.onload = function() {
+          initPanzoom(card);
+        };
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function assignImagesToCards(startCard, files) {
+      const container = startCard.parentElement;
+      const cards = Array.from(container.querySelectorAll('.card'));
+      const startIndex = cards.indexOf(startCard);
+      let fileIndex = 0;
+      for (let i = startIndex; i < cards.length && fileIndex < files.length; i++) {
+        const card = cards[i];
+        const img = card.querySelector('.img-container img');
+        if (!img.src) {
+          assignImageToCard(card, files[fileIndex]);
+          fileIndex++;
+        }
+      }
+    }
+
+    function initPanzoom(card) {
+      const container = card.querySelector('.img-container');
+      if (panzoomInstances.has(card)) {
+        panzoomInstances.get(card).destroy();
+      }
+      const instance = Panzoom(container, {
+        maxScale: 5,
+        minScale: 1,
+        contain: 'invert'
+      });
+      card.addEventListener('wheel', instance.zoomWithWheel);
+      panzoomInstances.set(card, instance);
+    }
+
+    function uploadCommonImage(selector) {
+      const fileInput = document.createElement('input');
+      fileInput.type = 'file';
+      fileInput.accept = 'image/*';
+      fileInput.style.display = 'none';
+      fileInput.addEventListener('change', function() {
+        if (!fileInput.files.length) return;
+        const reader = new FileReader();
+        reader.onload = function(ev) {
+          document.querySelectorAll(selector).forEach(card => {
+            const img = card.querySelector('.img-container img');
+            img.src = ev.target.result;
+            img.onload = function() {
+              initPanzoom(card);
+            };
+          });
+        };
+        reader.readAsDataURL(fileInput.files[0]);
+      });
+      document.body.appendChild(fileInput);
+      fileInput.click();
+      fileInput.remove();
+    }
+
+    /* Border controls */
+    const toggleBorder = document.getElementById('toggleBorder');
+    const borderStyleSelect = document.getElementById('borderStyleSelect');
+    const borderRadiusInput = document.getElementById('borderRadiusInput');
+    const radiusValueDisplay = document.getElementById('radiusValue');
+    function updateCardBorders() {
+      document.querySelectorAll('.card').forEach(card => {
+        if (toggleBorder.checked) {
+          const style = borderStyleSelect.value;
+          card.style.border = (style === 'none') ? 'none' : ('2px ' + style + ' #000');
+        } else {
+          card.style.border = 'none';
+        }
+        card.style.borderRadius = borderRadiusInput.value + 'mm';
+      });
+    }
+    toggleBorder.addEventListener('change', updateCardBorders);
+    borderStyleSelect.addEventListener('change', updateCardBorders);
+    borderRadiusInput.addEventListener('input', function() {
+      radiusValueDisplay.textContent = borderRadiusInput.value;
+      updateCardBorders();
+    });
+
+    gridLayoutSelect.addEventListener('change', function() {
+      const layout = gridLayoutSelect.value;
+      generateGrid(frontContainer, layout);
+      generateGrid(backContainer, layout);
+      updateCardBorders();
+    });
+
+    /* Copy design functions (modified to also copy properties) */
+    document.getElementById('copyFrontBtn').addEventListener('click', function() {
+      const index = copyFrontSelect.value;
+      const cards = frontContainer.querySelectorAll('.card');
+      if (!cards[index]) return;
+      const sourceCard = cards[index];
+      const sourceImg = sourceCard.querySelector('.img-container img');
+      if (!sourceImg.src) return;
+      // Retrieve properties from the source card
+      const sourceTransform = sourceCard.querySelector('.img-container').style.transform;
+      const sourceBackground = sourceCard.style.backgroundColor;
+      const sourceObjectFit = sourceImg.style.objectFit;
+      cards.forEach(card => {
+        const img = card.querySelector('.img-container img');
+        img.src = sourceImg.src;
+        // Copy the inline transform, background, and object-fit properties
+        card.querySelector('.img-container').style.transform = sourceTransform;
+        card.style.backgroundColor = sourceBackground;
+        img.style.objectFit = sourceObjectFit;
+        img.onload = function() { initPanzoom(card); };
+      });
+    });
+
+    document.getElementById('copyBackBtn').addEventListener('click', function() {
+      const index = copyBackSelect.value;
+      const cards = backContainer.querySelectorAll('.card');
+      if (!cards[index]) return;
+      const sourceCard = cards[index];
+      const sourceImg = sourceCard.querySelector('.img-container img');
+      if (!sourceImg.src) return;
+      const sourceTransform = sourceCard.querySelector('.img-container').style.transform;
+      const sourceBackground = sourceCard.style.backgroundColor;
+      const sourceObjectFit = sourceImg.style.objectFit;
+      cards.forEach(card => {
+        const img = card.querySelector('.img-container img');
+        img.src = sourceImg.src;
+        card.querySelector('.img-container').style.transform = sourceTransform;
+        card.style.backgroundColor = sourceBackground;
+        img.style.objectFit = sourceObjectFit;
+        img.onload = function() { initPanzoom(card); };
+      });
+    });
+
+    document.getElementById('uploadFrontCommonBtn').addEventListener('click', function() {
+      uploadCommonImage('#a4Front .card');
+    });
+    document.getElementById('uploadBackCommonBtn').addEventListener('click', function() {
+      uploadCommonImage('#a4Back .card');
+    });
+
+    /* Inline Advanced Controls Logic */
+    const inlineAdvancedControls = document.getElementById('inlineAdvancedControls');
+    const zoomSlider = document.getElementById('zoomSlider');
+    const zoomValueDisplay = document.getElementById('zoomValue');
+    const xOffsetSlider = document.getElementById('xOffsetSlider');
+    const xOffsetValueDisplay = document.getElementById('xOffsetValue');
+    const yOffsetSlider = document.getElementById('yOffsetSlider');
+    const yOffsetValueDisplay = document.getElementById('yOffsetValue');
+    const bgColorPicker = document.getElementById('bgColorPicker');
+    const fillCardCheckbox = document.getElementById('fillCardCheckbox');
+    const autoFillBgCheckbox = document.getElementById('autoFillBgCheckbox');
+    const changeImageBtn = document.getElementById('changeImageBtn');
+    const closeInlineAdvanced = document.getElementById('closeInlineAdvanced');
+
+    // Mapping function: slider value to scale
+    function getScaleFromSlider(val) {
+      val = parseFloat(val);
+      if (val >= 0) {
+        return 1 + (val / 5) * 4;  // When val = 5, scale = 5
+      } else {
+        return 1 / (1 + (Math.abs(val) / 5) * 4);  // When val = -5, scale ≈ 0.2
+      }
+    }
+
+    function updateTransform() {
+      if (currentEditingCard) {
+        const sliderVal = zoomSlider.value;
+        const scale = getScaleFromSlider(sliderVal);
+        const xOff = xOffsetSlider.value;
+        const yOff = yOffsetSlider.value;
+        currentEditingCard.querySelector('.img-container').style.transform = `scale(${scale}) translate(${xOff}px, ${yOff}px)`;
+        zoomValueDisplay.textContent = scale.toFixed(2);
+      }
+    }
+
+    function openInlineAdvancedControls(card) {
+      currentEditingCard = card;
+      zoomSlider.value = 0;
+      zoomValueDisplay.textContent = "1.00";
+      xOffsetSlider.value = 0;
+      xOffsetValueDisplay.textContent = "0";
+      yOffsetSlider.value = 0;
+      yOffsetValueDisplay.textContent = "0";
+      bgColorPicker.value = rgbToHex(window.getComputedStyle(card).backgroundColor);
+      fillCardCheckbox.checked = false;
+      autoFillBgCheckbox.checked = false;
+      const img = card.querySelector('.img-container img');
+      img.style.objectFit = "contain";
+      inlineAdvancedControls.style.display = "block";
+      inlineAdvancedControls.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    zoomSlider.addEventListener('input', updateTransform);
+    xOffsetSlider.addEventListener('input', function() {
+      xOffsetValueDisplay.textContent = xOffsetSlider.value;
+      updateTransform();
+    });
+    yOffsetSlider.addEventListener('input', function() {
+      yOffsetValueDisplay.textContent = yOffsetSlider.value;
+      updateTransform();
+    });
+    bgColorPicker.addEventListener('input', function() {
+      if (currentEditingCard) {
+        currentEditingCard.style.backgroundColor = bgColorPicker.value;
+      }
+    });
+    changeImageBtn.addEventListener('click', function() {
+      if (currentEditingCard) {
+        uploadImagesForCard(currentEditingCard, false);
+      }
+    });
+    fillCardCheckbox.addEventListener('change', function() {
+      if (currentEditingCard) {
+        const img = currentEditingCard.querySelector('.img-container img');
+        img.style.objectFit = this.checked ? "cover" : "contain";
+      }
+    });
+    autoFillBgCheckbox.addEventListener('change', function() {
+      if (currentEditingCard && this.checked) {
+        const img = currentEditingCard.querySelector('.img-container img');
+        computeAverageColor(img, function(hexColor) {
+          currentEditingCard.style.backgroundColor = hexColor;
+          bgColorPicker.value = hexColor;
+        });
+      }
+    });
+    closeInlineAdvanced.addEventListener('click', function() {
+      inlineAdvancedControls.style.display = "none";
+      currentEditingCard = null;
+    });
+
+    function rgbToHex(rgb) {
+      const result = /^rgb(\d+),\s*(\d+),\s*(\d+)$/.exec(rgb);
+      return result ? "#" +
+        ("0" + parseInt(result[1],10).toString(16)).slice(-2) +
+        ("0" + parseInt(result[2],10).toString(16)).slice(-2) +
+        ("0" + parseInt(result[3],10).toString(16)).slice(-2)
+        : "#ffffff";
+    }
+
+    function computeAverageColor(img, callback) {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      canvas.width = 50;
+      canvas.height = 50;
+      ctx.drawImage(img, 0, 0, 50, 50);
+      try {
+        const imageData = ctx.getImageData(0, 0, 50, 50);
+        const data = imageData.data;
+        let r = 0, g = 0, b = 0, count = 0;
+        for (let i = 0; i < data.length; i += 4) {
+          r += data[i];
+          g += data[i + 1];
+          b += data[i + 2];
+          count++;
+        }
+        r = Math.round(r / count);
+        g = Math.round(g / count);
+        b = Math.round(b / count);
+        const hex = "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+        callback(hex);
+      } catch (e) {
+        console.error("Error computing average color:", e);
+        callback("#ffffff");
+      }
+    }
+
+    /* Sheet Display Switch */
+    const sheetSwitchRadios = document.querySelectorAll('input[name="sheetDisplay"]');
+    sheetSwitchRadios.forEach(radio => {
+      radio.addEventListener('change', function() {
+        if (this.value === "front") {
+          frontContainer.style.display = "grid";
+          backContainer.style.display = "none";
+        } else if (this.value === "back") {
+          frontContainer.style.display = "none";
+          backContainer.style.display = "grid";
+        } else {
+          frontContainer.style.display = "grid";
+          backContainer.style.display = "grid";
+        }
+      });
+    });
+
+    /* Preview Mode Modal Logic */
+    const previewModal = document.getElementById('previewModal');
+    const closePreviewModal = document.getElementById('closePreviewModal');
+    const previewModeBtn = document.getElementById('previewModeBtn');
+    const previewFront = document.getElementById('previewFront');
+    const previewBack = document.getElementById('previewBack');
+    const previewGrid = document.getElementById('previewGrid');
+    const toggleGrid = document.getElementById('toggleGrid');
+    const toggleGuides = document.getElementById('toggleGuides');
+    const previewXOffset = document.getElementById('previewXOffset');
+    const previewYOffset = document.getElementById('previewYOffset');
+    const previewXOffsetVal = document.getElementById('previewXOffsetVal');
+    const previewYOffsetVal = document.getElementById('previewYOffsetVal');
+    const applyAlignmentBtn = document.getElementById('applyAlignmentBtn');
+
+    previewModeBtn.addEventListener('click', function() {
+      previewFront.innerHTML = frontContainer.innerHTML;
+      previewFront.className = frontContainer.className;
+      previewBack.innerHTML = backContainer.innerHTML;
+      previewBack.className = backContainer.className;
+      previewBack.style.left = "0px";
+      previewBack.style.top = "0px";
+      previewModal.style.display = "flex";
+    });
+    closePreviewModal.addEventListener('click', function() {
+      previewModal.style.display = "none";
+    });
+    toggleGrid.addEventListener('change', function() {
+      previewGrid.style.display = toggleGrid.checked ? "block" : "none";
+    });
+    toggleGuides.addEventListener('change', function() {
+      document.getElementById('guideHorizontal').style.display = toggleGuides.checked ? "block" : "none";
+      document.getElementById('guideVertical').style.display = toggleGuides.checked ? "block" : "none";
+    });
+    previewXOffset.addEventListener('input', function() {
+      previewXOffsetVal.textContent = previewXOffset.value;
+      previewBack.style.left = previewXOffset.value + "px";
+    });
+    previewYOffset.addEventListener('input', function() {
+      previewYOffsetVal.textContent = previewYOffset.value;
+      previewBack.style.top = previewYOffset.value + "px";
+    });
+    applyAlignmentBtn.addEventListener('click', function() {
+      backContainer.style.position = "relative";
+      backContainer.style.left = previewXOffset.value + "px";
+      backContainer.style.top = previewYOffset.value + "px";
+      previewModal.style.display = "none";
+    });
+
+    /* PDF Download */
+    document.getElementById('downloadPDFBtn').addEventListener('click', function() {
+      Promise.all([
+        html2canvas(frontContainer, { scale: 2 }),
+        html2canvas(backContainer, { scale: 2 })
+      ]).then(function(canvases) {
+        const frontImgData = canvases[0].toDataURL('image/png');
+        const backImgData = canvases[1].toDataURL('image/png');
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF({
+          orientation: 'portrait',
+          unit: 'mm',
+          format: 'a4'
+        });
+        pdf.addImage(frontImgData, 'PNG', 0, 0, 210, 297);
+        pdf.addPage();
+        pdf.addImage(backImgData, 'PNG', 0, 0, 210, 297);
+        pdf.save('collector_cards.pdf');
+      });
+    });
+
+    /* Initialize grids on load */
+    window.addEventListener('load', function() {
+      generateGrid(frontContainer, gridLayoutSelect.value);
+      generateGrid(backContainer, gridLayoutSelect.value);
+      updateCardBorders();
+    });
+  </script>
+</body>
+</html>
