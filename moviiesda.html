@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>MdaScraper - Minimal Dark UI</title>
+  <style>
+    :root {
+      --bg-color: #121212;
+      --header-bg: #1e1e1e;
+      --card-bg: #1e1e1e;
+      --border-color: #333;
+      --text-color: #e0e0e0;
+      --button-bg: #333;
+      --button-hover: #444;
+      --button-disabled: #555;
+    }
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      background-color: var(--header-bg);
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-bottom: 1px solid var(--border-color);
+    }
+    header h1, header h2 {
+      margin: 0;
+    }
+    .container {
+      padding: 16px;
+      /* Add extra bottom padding so content doesn't hide behind the fixed nav bar */
+      padding-bottom: 80px;
+    }
+    .card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 12px;
+      margin: 12px 0;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+    .card:hover {
+      background-color: var(--button-hover);
+    }
+    /* Fixed navigation bar at bottom */
+    #navBar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      background-color: var(--header-bg);
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-around;
+      padding: 10px 0;
+      z-index: 1000;
+    }
+    #navBar button {
+      background-color: var(--button-bg);
+      color: var(--text-color);
+      border: none;
+      padding: 10px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: background-color 0.2s ease;
+      flex: 1;
+      margin: 0 5px;
+    }
+    #navBar button:hover {
+      background-color: var(--button-hover);
+    }
+    #navBar button:disabled {
+      background-color: var(--button-disabled);
+      cursor: not-allowed;
+    }
+    #message {
+      position: fixed;
+      bottom: 80px; /* Positioned above the nav bar */
+      left: 16px;
+      color: #ff6b6b;
+      font-weight: bold;
+      background: rgba(0, 0, 0, 0.75);
+      padding: 8px 12px;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <!-- Main Page -->
+  <div id="mainPage">
+    <header>
+      <h1>MdaScraper</h1>
+    </header>
+    <div id="mainContent" class="container">Loading...</div>
+  </div>
+
+  <!-- Movies / Movie Detail Page -->
+  <div id="moviesPage" style="display: none;">
+    <header>
+      <h2>Movie Page</h2>
+    </header>
+    <div id="moviesContent" class="container">Loading...</div>
+    <!-- Fixed bottom navigation bar -->
+    <div id="navBar">
+      <button id="prevButton">Previous</button>
+      <button id="backButton">Back</button>
+      <button id="nextButton">Next</button>
+    </div>
+  </div>
+
+  <div id="message"></div>
+
+  <script>
+    // Global base URL for the target website.
+    const baseUrl = "https://moviesda.cool";
+
+    // A history stack for nested movie pages.
+    const historyStack = [];
+
+    // Fetch HTML content using AllOrigins.
+    async function fetchHTML(url) {
+      const proxyUrl = "https://api.allorigins.win/get?disableCache=true&url=" + encodeURIComponent(url);
+      console.log("Fetching URL:", url);
+      const response = await fetch(proxyUrl);
+      if (response.ok) {
+        const data = await response.json();
+        console.log("Fetched snippet:", data.contents.substring(0, 200));
+        return data.contents;
+      }
+      throw new Error("Failed to fetch URL: " + url);
+    }
+
+    // Display a temporary message.
+    function showMessage(msg) {
+      const msgDiv = document.getElementById("message");
+      msgDiv.textContent = msg;
+      setTimeout(() => { msgDiv.textContent = ""; }, 3000);
+    }
+
+    // Render a list of "card" links into a container.
+    function displayLinks(containerId, links, clickHandler) {
+      const container = document.getElementById(containerId);
+      container.innerHTML = "";
+      if (links.length === 0) {
+        container.innerHTML = "<p>No data found.</p>";
+        return;
+      }
+      links.forEach(link => {
+        if(link.title.includes("Request")) return;
+        const card = document.createElement("div");
+        card.className = "card";
+        card.innerHTML = `<p>${link.title}</p>` +
+                         (link.fileSize ? `<p>${link.fileSize}</p>` : "") +
+                         (link.downloadFormat ? `<p>${link.downloadFormat}</p>` : "");
+        card.addEventListener("click", () => clickHandler(link));
+        container.appendChild(card);
+      });
+    }
+
+    // --- Main Page Scraper (using Flutter logic) ---
+    async function scrapeMainPage() {
+      const url = baseUrl;
+      document.getElementById("mainContent").innerHTML = "Loading...";
+      try {
+        const htmlText = await fetchHTML(url);
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(htmlText, "text/html");
+        let links = [];
+        // Look for div.f containing an <img> with src="/img/dir.gif"
+        const divs = doc.getElementsByClassName("f");
+        for (let div of divs) {
+          const imgTags = div.getElementsByTagName("img");
+          const hasDirGif = Array.from(imgTags).some(img => img.getAttribute("src") === "/img/dir.gif");
+          if (hasDirGif) {
+            const anchorTags = div.getElementsByTagName("a");
+            for (let anchor of anchorTags) {
+              const href = anchor.getAttribute("href") || "";
+              const title = anchor.textContent.trim();
+              links.push({ href, title });
+            }
+          }
+        }
+        displayLinks("mainContent", links, (link) => {
+          const fullUrl = baseUrl + link.href;
+          historyStack.length = 0; // Clear history when navigating from main screen.
+          showMoviesPage(fullUrl);
+        });
+      } catch (error) {
+        showMessage("Error: " + error.message);
+        console.error(error);
+      }
+    }
+
+    let currentPage = 1;
+    let totalPages = 1;
+    let currentMoviesUrl = "";
+
+    // --- Movies List / Detail Scraper (using Flutter logic) ---
+    async function scrapeMoviesList(url) {
+      currentMoviesUrl = url;
+      document.getElementById("moviesContent").innerHTML = "Loading...";
+      try {
+        const htmlText = await fetchHTML(url);
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(htmlText, "text/html");
+        let links = [];
+        // 1. Try scraping from div.f.
+        const divs = doc.getElementsByClassName("f");
+        for (let div of divs) {
+          const imgTags = div.getElementsByTagName("img");
+          const hasDirGif = Array.from(imgTags).some(img => img.getAttribute("src") === "/img/dir.gif");
+          if (hasDirGif) {
+            const anchorTags = div.getElementsByTagName("a");
+            for (let anchor of anchorTags) {
+              const href = anchor.getAttribute("href") || "";
+              const title = anchor.textContent.trim();
+              links.push({ href, title });
+            }
+          }
+        }
+        // 2. If not found, try scraping from tables.
+        if (links.length === 0) {
+          const tables = doc.getElementsByTagName("table");
+          for (let table of tables) {
+            const anchorTags = table.getElementsByTagName("a");
+            const sizes = table.textContent.split("Size :");
+            if (anchorTags.length > 0 && sizes.length > 1) {
+              const href = anchorTags[0].getAttribute("href") || "";
+              const title = anchorTags[0].textContent.trim();
+              const size = sizes[1].split("\n")[0].trim();
+              links.push({ href, title: title + " (" + size + ")" });
+            }
+          }
+        }
+        // 3. Try scraping from div.mv-content.
+        if (links.length === 0) {
+          const mvContents = doc.getElementsByClassName("mv-content");
+          for (let mv of mvContents) {
+            const leftDiv = mv.querySelector(".left");
+            if (leftDiv) {
+              const anchor = leftDiv.querySelector("a.coral");
+              let title = "";
+              if (anchor) {
+                const strong = anchor.querySelector("strong");
+                title = strong ? strong.textContent.trim() : anchor.textContent.trim();
+              }
+              const href = anchor ? anchor.getAttribute("href") || "" : "";
+              const lis = leftDiv.getElementsByTagName("li");
+              let fileSize = "";
+              let downloadFormat = "";
+              if (lis.length >= 2) { fileSize = lis[1].textContent.trim(); }
+              if (lis.length >= 3) { downloadFormat = lis[2].textContent.trim(); }
+              links.push({ href, title, fileSize, downloadFormat });
+            }
+          }
+        }
+        // 4. Try scraping from div.bf.
+        if (links.length === 0) {
+          const bfBlocks = doc.getElementsByClassName("bf");
+          for (let bf of bfBlocks) {
+            const detailsEls = bf.getElementsByClassName("details");
+            let fileName = "";
+            let fileSize = "";
+            let downloadFormat = "";
+            for (let detail of detailsEls) {
+              const text = detail.textContent;
+              if (text.includes("File Name:")) {
+                fileName = text.replace("File Name:", "").trim();
+              } else if (text.includes("File Size:")) {
+                fileSize = text.replace("File Size:", "").trim();
+              } else if (text.includes("Download Format:")) {
+                downloadFormat = text.replace("Download Format:", "").trim();
+              }
+            }
+            const downloadDivs = bf.getElementsByClassName("dlink");
+            for (let dlink of downloadDivs) {
+              const anchor = dlink.querySelector("a");
+              if (anchor) {
+                const href = anchor.getAttribute("href") || "";
+                let title = fileName ? fileName : "Unknown File";
+                title += " - " + anchor.textContent.trim();
+                links.push({ href, title, fileSize, downloadFormat });
+              }
+            }
+          }
+        }
+        // 5. Fallback: Try scraping from div.dlink.
+        if (links.length === 0) {
+          const dlinkDivs = doc.getElementsByClassName("dlink");
+          for (let div of dlinkDivs) {
+            const anchorTags = div.getElementsByTagName("a");
+            if (anchorTags.length > 0) {
+              const href = anchorTags[0].getAttribute("href") || "";
+              const parts = href.split("/");
+              const lastPart = parts[parts.length - 1];
+              const newUrl = "https://download.vidshare.site/download/page/" + lastPart;
+              try {
+                const newHtml = await fetchHTML(newUrl);
+                const newDoc = parser.parseFromString(newHtml, "text/html");
+                const newDlinkDivs = newDoc.getElementsByClassName("dlink");
+                let downloadLinkCount = 1;
+                for (let newDiv of newDlinkDivs) {
+                  const newAnchorTags = newDiv.getElementsByTagName("a");
+                  if (newAnchorTags.length > 0) {
+                    const newHref = newAnchorTags[0].getAttribute("href") || "";
+                    links.push({ href: newHref, title: "Download link " + downloadLinkCount });
+                    downloadLinkCount++;
+                  }
+                }
+              } catch (err) {
+                console.error("Error fetching download links:", err);
+              }
+            }
+          }
+        }
+
+        // Pagination: extract info if available.
+        const paginationLastElement = doc.querySelector(".pagination_last");
+        if (paginationLastElement) {
+          totalPages = parseInt(paginationLastElement.textContent.trim()) || currentPage;
+        } else {
+          const anchorTags = doc.getElementsByTagName("a");
+          let pageNumbers = [];
+          for (let a of anchorTags) {
+            const href = a.getAttribute("href");
+            if (href && href.includes("?page=")) {
+              const match = href.match(/\?page=(\d+)/);
+              if (match) pageNumbers.push(parseInt(match[1]));
+            }
+          }
+          totalPages = pageNumbers.length > 0 ? Math.max(...pageNumbers) : currentPage;
+        }
+
+        // Render links.
+        displayLinks("moviesContent", links, (link) => {
+          // If the link appears downloadable (video extension or contains "hotshare.link"), copy it.
+          if (/(\.mp4|\.mkv|\.avi|\.flv)$/i.test(link.href) || link.href.includes("hotshare.link")) {
+            navigator.clipboard.writeText(link.href)
+              .then(() => showMessage("Link Copied Successfully"))
+              .catch(err => showMessage("Error copying link: " + err));
+          } else {
+            // For deeper navigation, push the new URL onto the history stack and navigate.
+            const nextUrl = link.href.startsWith("http") ? link.href : baseUrl + link.href;
+            historyStack.push(nextUrl);
+            scrapeMoviesList(nextUrl);
+          }
+        });
+
+        // Update pagination buttons.
+        document.getElementById("prevButton").disabled = (currentPage <= 1);
+        document.getElementById("nextButton").disabled = (currentPage >= totalPages);
+      } catch (error) {
+        showMessage("Error: " + error.message);
+        console.error(error);
+      }
+    }
+
+    // Switch to the movies page and push URL into history.
+    function showMoviesPage(url) {
+      currentPage = 1;
+      document.getElementById("mainPage").style.display = "none";
+      document.getElementById("moviesPage").style.display = "block";
+      historyStack.push(url);
+      scrapeMoviesList(url);
+    }
+
+    // Back button: if history has more than one item, pop current and load previous; otherwise, return to main page.
+    document.getElementById("backButton").addEventListener("click", () => {
+      if (historyStack.length > 1) {
+        historyStack.pop(); // Remove current page.
+        const prevUrl = historyStack[historyStack.length - 1];
+        scrapeMoviesList(prevUrl);
+      } else {
+        document.getElementById("moviesPage").style.display = "none";
+        document.getElementById("mainPage").style.display = "block";
+      }
+    });
+
+    document.getElementById("prevButton").addEventListener("click", () => {
+      if (currentPage > 1) {
+        currentPage--;
+        const pagedUrl = currentMoviesUrl + (currentMoviesUrl.includes("?") ? "&" : "?") + "page=" + currentPage;
+        scrapeMoviesList(pagedUrl);
+      }
+    });
+
+    document.getElementById("nextButton").addEventListener("click", () => {
+      if (currentPage < totalPages) {
+        currentPage++;
+        const pagedUrl = currentMoviesUrl + (currentMoviesUrl.includes("?") ? "&" : "?") + "page=" + currentPage;
+        scrapeMoviesList(pagedUrl);
+      }
+    });
+
+    window.onload = function() {
+      scrapeMainPage();
+    };
+  </script>
+</body>
+</html>
