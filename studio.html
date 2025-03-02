@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Pixie Captures</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
@@ -29,7 +29,7 @@
             justify-content: space-between;
             align-items: center;
             padding: 15px 20px;
-            z-index: 10;
+            z-index: 10; 
         }
         .studio-name {
             font-size: 28px;
@@ -103,6 +103,7 @@
             background-size: cover;
             background-position: center;
             flex-shrink: 0;
+            touch-action: none;
         }
     </style>
 </head>
@@ -129,8 +130,8 @@
         <div class="page" style="background-image: url('home_assets/h2.avif');"><h1>Our Services</h1></div>
         <div class="page" style="background-image: url('home_assets/h3.avif');"><h1>Packages</h1></div>
         <div class="page" style="background-image: url('home_assets/h1.avif');"><h1>Portfolio</h1></div>
-        <div class="page" style="background-image: url('home_assets/h2.avif');"><h1>About Us</h1></div>
-        <div class="page" style="background-image: url('home_assets/h3.avif');"><h1>Contact Us</h1></div>
+        <div class="page" style="background-image: url('home_assets/h1.avif');"><h1>About Us</h1></div>
+        <div class="page" style="background-image: url('home_assets/h1.avif');"><h1>Contact Us</h1></div>
     </div>
 
     <script>
@@ -184,12 +185,25 @@
         let touchStartY = 0;
         window.addEventListener("touchstart", (e) => {
             touchStartY = e.touches[0].clientY;
+            e.preventDefault(); // Prevent accidental zooming
         });
 
         window.addEventListener("touchend", (e) => {
             let touchEndY = e.changedTouches[0].clientY;
             if (touchStartY - touchEndY > 50) goToPage(currentPage + 1); // Swipe Up
             if (touchEndY - touchStartY > 50) goToPage(currentPage - 1); // Swipe Down
+        });
+
+        document.addEventListener("gesturestart", (e) => {
+            e.preventDefault(); // Prevent zooming
+        });
+
+        document.addEventListener("gesturechange", (e) => {
+            e.preventDefault(); // Prevent zooming
+        });
+
+        document.addEventListener("gestureend", (e) => {
+            e.preventDefault(); // Prevent zooming
         });
     </script>
 </body>
