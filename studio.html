@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pixie Captures</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+        body {
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            background: black;
+        }
+        .top-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background: transparent;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            z-index: 10;
+        }
+        .studio-name {
+            font-size: 28px;
+            font-family: 'Caveat', cursive;
+            font-weight: 700;
+            color: white;
+        }
+        .menu-btn {
+            font-size: 24px;
+            color: white;
+            cursor: pointer;
+        }
+        .menu-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transform: translateY(-100%);
+            transition: transform 0.3s ease;
+            z-index: 20;
+        }
+        .menu-overlay.active {
+            transform: translateY(0);
+        }
+        .menu-options {
+            list-style: none;
+            text-align: center;
+            width: 100%;
+        }
+        .menu-options li {
+            font-size: 24px;
+            font-weight: 600;
+            color: black;
+            padding: 15px 0;
+            cursor: pointer;
+            transition: transform 0.2s ease-in-out;
+        }
+        .menu-options li:hover, .menu-options li.active {
+            transform: scale(1.1);
+        }
+        .close-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 30px;
+            color: black;
+            cursor: pointer;
+        }
+        .container {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.3s ease-in-out;
+        }
+        .page {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            font-size: 24px;
+            color: white;
+            background-size: cover;
+            background-position: center;
+            flex-shrink: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="top-bar">
+        <div class="studio-name">Pixie Captures</div>
+        <div class="menu-btn"><i class="fas fa-bars"></i></div>
+    </div>
+
+    <div class="menu-overlay">
+        <div class="close-btn">&times;</div>
+        <ul class="menu-options">
+            <li data-page="0" class="active">Home</li>
+            <li data-page="1">Services</li>
+            <li data-page="2">Packages</li>
+            <li data-page="3">Portfolio</li>
+            <li data-page="4">About</li>
+            <li data-page="5">Contact</li>
+        </ul>
+    </div>
+
+    <div class="container">
+        <div class="page" style="background-image: url('home_assets/h1.avif');"><h1>Welcome to Pixie Captures</h1></div>
+        <div class="page" style="background-image: url('home_assets/h2.avif');"><h1>Our Services</h1></div>
+        <div class="page" style="background-image: url('home_assets/h3.avif');"><h1>Packages</h1></div>
+        <div class="page" style="background-image: url('home_assets/h1.avif');"><h1>Portfolio</h1></div>
+        <div class="page" style="background-image: url('home_assets/h2.avif');"><h1>About Us</h1></div>
+        <div class="page" style="background-image: url('home_assets/h3.avif');"><h1>Contact Us</h1></div>
+    </div>
+
+    <script>
+        const menuOverlay = document.querySelector(".menu-overlay");
+        const menuBtn = document.querySelector(".menu-btn");
+        const closeBtn = document.querySelector(".close-btn");
+        const menuItems = document.querySelectorAll(".menu-options li");
+        const pages = document.querySelectorAll(".page");
+        const container = document.querySelector(".container");
+
+        let currentPage = 0;
+        let isScrolling = false;
+
+        function updateActiveMenu() {
+            menuItems.forEach(item => item.classList.remove("active"));
+            document.querySelector(`li[data-page="${currentPage}"]`).classList.add("active");
+        }
+
+        function goToPage(index) {
+            if (index >= 0 && index < pages.length) {
+                currentPage = index;
+                container.style.transform = `translateY(-${currentPage * 100}vh)`;
+                updateActiveMenu();
+            }
+        }
+
+        menuBtn.addEventListener("click", () => menuOverlay.classList.add("active"));
+        closeBtn.addEventListener("click", () => menuOverlay.classList.remove("active"));
+
+        menuItems.forEach(item => {
+            item.addEventListener("click", () => {
+                goToPage(parseInt(item.getAttribute("data-page")));
+                menuOverlay.classList.remove("active");
+            });
+        });
+
+        window.addEventListener("wheel", (e) => {
+            if (!isScrolling) {
+                isScrolling = true;
+                if (e.deltaY > 0) goToPage(currentPage + 1);
+                else goToPage(currentPage - 1);
+                setTimeout(() => isScrolling = false, 300);
+            }
+        });
+
+        window.addEventListener("keydown", (e) => {
+            if (e.key === "ArrowDown") goToPage(currentPage + 1);
+            if (e.key === "ArrowUp") goToPage(currentPage - 1);
+        });
+
+        let touchStartY = 0;
+        window.addEventListener("touchstart", (e) => {
+            touchStartY = e.touches[0].clientY;
+        });
+
+        window.addEventListener("touchend", (e) => {
+            let touchEndY = e.changedTouches[0].clientY;
+            if (touchStartY - touchEndY > 50) goToPage(currentPage + 1); // Swipe Up
+            if (touchEndY - touchStartY > 50) goToPage(currentPage - 1); // Swipe Down
+        });
+    </script>
+</body>
+</html>
