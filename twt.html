@@ -75,19 +75,41 @@
             max-width: 100%;
             border-radius: 12px;
         }
-        .download-btn {
-            display: block;
+        .action-buttons {
             margin-top: 12px;
+        }
+        .action-buttons button {
             padding: 8px;
-            background: #28a745;
-            color: white;
-            text-decoration: none;
+            width: 100%;
             border-radius: 6px;
             font-weight: 600;
             transition: 0.3s;
+            margin: 5px 0;
+        }
+        .download-btn {
+            background: #28a745;
+            color: white;
         }
         .download-btn:hover {
             background: #218838;
+        }
+        .copy-btn {
+            background: #007bff;
+            color: white;
+        }
+        .copy-btn:hover {
+            background: #0056b3;
+        }
+        .note {
+            font-size: 12px;
+            color: #ffcc00;
+            margin-top: 5px;
+        }
+        .copied-message {
+            font-size: 14px;
+            color: #00ff00;
+            display: none;
+            margin-top: 5px;
         }
     </style>
 </head>
@@ -135,7 +157,12 @@
                         mediaContainer.innerHTML += `
                             <div class="media-box">
                                 <video src="${src}" poster="${poster}" controls></video>
-                                <button class="download-btn" onclick="downloadMedia('${src}', 'mp4')">Download Video</button>
+                                <div class="action-buttons">
+                                    <button class="download-btn" onclick="downloadMedia('${src}', 'mp4')">Download Video</button>
+                                    <p class="note">If the download doesn't start, use "Copy Link".</p>
+                                    <button class="copy-btn" onclick="copyLink('${src}', this)">Copy Link</button>
+                                    <p class="copied-message">Link Copied!</p>
+                                </div>
                             </div>
                         `;
                     }
@@ -147,7 +174,12 @@
                         mediaContainer.innerHTML += `
                             <div class="media-box">
                                 <img src="${src}" alt="Twitter Image">
-                                <button class="download-btn" onclick="downloadMedia('${src}', 'jpg')">Download Image</button>
+                                <div class="action-buttons">
+                                    <button class="download-btn" onclick="downloadMedia('${src}', 'jpg')">Download Image</button>
+                                    <p class="note">If the download doesn't start, use "Copy Link".</p>
+                                    <button class="copy-btn" onclick="copyLink('${src}', this)">Copy Link</button>
+                                    <p class="copied-message">Link Copied!</p>
+                                </div>
                             </div>
                         `;
                     }
@@ -180,6 +212,16 @@
                     document.body.removeChild(link);
                 })
                 .catch(error => console.error("Download failed:", error));
+        }
+
+        function copyLink(url, button) {
+            navigator.clipboard.writeText(url).then(() => {
+                let message = button.nextElementSibling;
+                message.style.display = "block";
+                setTimeout(() => {
+                    message.style.display = "none";
+                }, 1500);
+            }).catch(err => console.error("Copy failed:", err));
         }
     </script>
 
