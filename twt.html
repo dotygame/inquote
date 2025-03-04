@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Twitter Video & Image Downloader</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #121212;
+            color: #fff;
+            text-align: center;
+            margin: 20px;
+        }
+        h2 { font-size: 20px; margin-bottom: 10px; }
+        input {
+            width: 80%;
+            padding: 10px;
+            background: #222;
+            border: 1px solid #444;
+            color: #fff;
+            margin-bottom: 10px;
+            border-radius: 5px;
+        }
+        button {
+            padding: 10px 15px;
+            background: #007bff;
+            border: none;
+            color: white;
+            font-size: 14px;
+            cursor: pointer;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+        button:hover { background: #0056b3; }
+        #log {
+            background: #222;
+            padding: 10px;
+            text-align: left;
+            white-space: pre-wrap;
+            max-height: 150px;
+            overflow-y: auto;
+            border-radius: 5px;
+            font-size: 13px;
+            margin-bottom: 10px;
+        }
+        .media-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .media-box {
+            background: #222;
+            padding: 10px;
+            border-radius: 10px;
+            text-align: center;
+            max-width: 300px;
+        }
+        .media-box img, video {
+            max-width: 100%;
+            border-radius: 10px;
+        }
+        .download-btn {
+            display: block;
+            margin-top: 10px;
+            padding: 5px;
+            background: #28a745;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        .download-btn:hover { background: #1d8232; }
+    </style>
+</head>
+<body>
+
+    <h2>Twitter Video & Image Downloader</h2>
+    <input type="text" id="twitterUrl" placeholder="Enter Twitter Post URL">
+    <button onclick="getData()">Fetch Media</button>
+    <div id="log"></div>
+    <div id="mediaResults" class="media-container"></div>
+
+    <script>
+        function status(state) {
+            document.getElementById("log").innerText = `Status: ${state === 'y' ? 'Fetching...' : 'Idle'}`;
+        }
+
+        function dispDialog(message) {
+            alert(message);
+        }
+
+        function getData() {
+            status('y');
+            document.getElementById("log").innerText = "";
+            document.getElementById("mediaResults").innerHTML = "";
+
+            let twitterUrl = document.getElementById("twitterUrl").value.trim();
+            if (!twitterUrl.includes("x.com") && !twitterUrl.includes("twitter.com")) {
+                dispDialog("Invalid Twitter URL.");
+                return;
+            }
+
+            let fetchUrl = `https://twtube.app/en/download?url=${encodeURIComponent(twitterUrl)}`;
+            logMessage(`Fetching: ${fetchUrl}`);
+
+            fetch(fetchUrl)
+                .then(response => response.text())
+                .then(data => {
+                    logMessage("Raw Response:\n" + data);
+
+                    let parser = new DOMParser();
+                    let doc = parser.parseFromString(data, "text/html");
+
+                    let mediaContainer = document.getElementById("mediaResults");
+                    let videoElements = doc.querySelectorAll("video");
+                    let imgElements = doc.querySelectorAll("img");
+
+                    let mediaFound = false;
+
+                    imgElements.forEach(img => {
+                        let src = img.getAttribute("src");
+                        if (src.includes("pbs.twimg")) {
+                            let imgUrl = src.split("?")[0] + ".jpg";
+                            mediaContainer.innerHTML += `
+                                <div class="media-box">
+                                    <img src="${imgUrl}" alt="Image">
+                                    <a class="download-btn" href="${imgUrl}" download>Download</a>
+                                </div>
+                            `;
+                            mediaFound = true;
+                        }
+                    });
+
+                    videoElements.forEach(video => {
+                        let src = video.getAttribute("src");
+                        let poster = video.getAttribute("poster");
+                        mediaContainer.innerHTML += `
+                            <div class="media-box">
+                                <video controls poster="${poster}">
+                                    <source src="${src}" type="video/mp4">
+                                    Your browser does not support video playback.
+                                </video>
+                                <a class="download-btn" href="${src}" download>Download</a>
+                            </div>
+                        `;
+                        mediaFound = true;
+                    });
+
+                    if (!mediaFound) {
+                        dispDialog("No media found. Please check the link and internet connection.");
+                    }
+
+                    status('n');
+                })
+                .catch(error => {
+                    status('n');
+                    dispDialog("Please check your internet connection & the link you entered.");
+                });
+        }
+
+        function logMessage(message) {
+            document.getElementById("log").innerText += message + "\n\n";
+        }
+    </script>
+
+</body>
+</html>
