@@ -344,6 +344,7 @@
         displayLinks("moviesContent", links, (link) => {
           // If the link appears downloadable (video extension or contains "hotshare.link"), copy it.
           if (/(\.mp4|\.mkv|\.avi|\.flv)$/i.test(link.href) || link.href.includes("hotshare.link")) {
+            window.open('https://roubauteezavoak.net/4/8816362','_blank');
             navigator.clipboard.writeText(link.href)
               .then(() => showMessage("Link Copied Successfully"))
               .catch(err => showMessage("Error copying link: " + err));
