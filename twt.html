@@ -3,46 +3,58 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Twitter Video & Image Downloader</title>
+    <title>SwiftSave - X Video & Image Downloader</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
-            background: #121212;
+            font-family: 'Poppins', sans-serif;
+            background: #0D0D0D;
             color: #fff;
             text-align: center;
             margin: 20px;
         }
-        h2 { font-size: 20px; margin-bottom: 10px; }
+        h1 {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+        p {
+            font-size: 14px;
+            color: #bbb;
+            margin-bottom: 20px;
+        }
         input {
             width: 80%;
-            padding: 10px;
-            background: #222;
-            border: 1px solid #444;
+            padding: 12px;
+            background: #1E1E1E;
+            border: none;
             color: #fff;
-            margin-bottom: 10px;
-            border-radius: 5px;
+            font-size: 16px;
+            border-radius: 8px;
+            outline: none;
+            text-align: center;
         }
         button {
-            padding: 10px 15px;
-            background: #007bff;
+            padding: 12px 18px;
+            margin-top: 10px;
+            background: linear-gradient(135deg, #ff416c, #ff4b2b);
             border: none;
             color: white;
-            font-size: 14px;
+            font-size: 16px;
             cursor: pointer;
-            border-radius: 5px;
-            margin-bottom: 10px;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: 0.3s;
         }
-        button:hover { background: #0056b3; }
-        #log {
-            background: #222;
-            padding: 10px;
-            text-align: left;
-            white-space: pre-wrap;
-            max-height: 150px;
-            overflow-y: auto;
-            border-radius: 5px;
-            font-size: 13px;
-            margin-bottom: 10px;
+        button:hover { 
+            background: linear-gradient(135deg, #ff4b2b, #ff416c);
+        }
+        button:disabled {
+            background: #444;
+            cursor: not-allowed;
+        }
+        .loading {
+            margin-top: 15px;
+            display: none;
         }
         .media-container {
             display: flex;
@@ -52,117 +64,122 @@
             margin-top: 20px;
         }
         .media-box {
-            background: #222;
-            padding: 10px;
-            border-radius: 10px;
+            background: #1A1A1A;
+            padding: 15px;
+            border-radius: 12px;
             text-align: center;
-            max-width: 300px;
+            max-width: 320px;
+            box-shadow: 0px 5px 15px rgba(255, 75, 43, 0.1);
         }
         .media-box img, video {
             max-width: 100%;
-            border-radius: 10px;
+            border-radius: 12px;
         }
         .download-btn {
             display: block;
-            margin-top: 10px;
-            padding: 5px;
+            margin-top: 12px;
+            padding: 8px;
             background: #28a745;
             color: white;
             text-decoration: none;
-            border-radius: 5px;
-            font-size: 14px;
+            border-radius: 6px;
+            font-weight: 600;
+            transition: 0.3s;
         }
-        .download-btn:hover { background: #1d8232; }
+        .download-btn:hover {
+            background: #218838;
+        }
     </style>
 </head>
 <body>
 
-    <h2>Twitter Video & Image Downloader</h2>
-    <input type="text" id="twitterUrl" placeholder="Enter Twitter Post URL">
-    <button onclick="getData()">Fetch Media</button>
-    <div id="log"></div>
-    <div id="mediaResults" class="media-container"></div>
+    <h1>SwiftSave</h1>
+    <p>Download Twitter/X videos & images in seconds.</p>
+    <input type="text" id="urlInput" placeholder="Paste Twitter/X link here" autofocus>
+    <button id="fetchButton" onclick="fetchMedia()">Download</button>
+    <div class="loading" id="loadingIndicator">
+        <p>Fetching media, please wait...</p>
+    </div>
+    <div class="media-container" id="mediaContainer"></div>
 
     <script>
-        function status(state) {
-            document.getElementById("log").innerText = `Status: ${state === 'y' ? 'Fetching...' : 'Idle'}`;
-        }
+        async function fetchMedia() {
+            let inputUrl = document.getElementById("urlInput").value.trim();
+            let fetchButton = document.getElementById("fetchButton");
+            let loadingIndicator = document.getElementById("loadingIndicator");
+            let mediaContainer = document.getElementById("mediaContainer");
 
-        function dispDialog(message) {
-            alert(message);
-        }
+            if (!inputUrl) return alert("Enter a valid Twitter link!");
 
-        function getData() {
-            status('y');
-            document.getElementById("log").innerText = "";
-            document.getElementById("mediaResults").innerHTML = "";
+            fetchButton.disabled = true;
+            loadingIndicator.style.display = "block";
+            mediaContainer.innerHTML = "";
 
-            let twitterUrl = document.getElementById("twitterUrl").value.trim();
-            if (!twitterUrl.includes("x.com") && !twitterUrl.includes("twitter.com")) {
-                dispDialog("Invalid Twitter URL.");
-                return;
-            }
+            let twtubeUrl = `https://twtube.app/en/download?url=${encodeURIComponent(inputUrl)}`;
+            let proxyUrl = `https://api.allorigins.win/get?disableCache=true&url=${encodeURIComponent(twtubeUrl)}`;
 
-            let fetchUrl = `https://twtube.app/en/download?url=${encodeURIComponent(twitterUrl)}`;
-            logMessage(`Fetching: ${fetchUrl}`);
+            try {
+                let response = await fetch(proxyUrl);
+                let data = await response.json();
 
-            fetch(fetchUrl)
-                .then(response => response.text())
-                .then(data => {
-                    logMessage("Raw Response:\n" + data);
+                let parser = new DOMParser();
+                let doc = parser.parseFromString(data.contents, "text/html");
 
-                    let parser = new DOMParser();
-                    let doc = parser.parseFromString(data, "text/html");
+                let videos = doc.querySelectorAll("video");
+                let images = doc.querySelectorAll("img");
 
-                    let mediaContainer = document.getElementById("mediaResults");
-                    let videoElements = doc.querySelectorAll("video");
-                    let imgElements = doc.querySelectorAll("img");
-
-                    let mediaFound = false;
-
-                    imgElements.forEach(img => {
-                        let src = img.getAttribute("src");
-                        if (src.includes("pbs.twimg")) {
-                            let imgUrl = src.split("?")[0] + ".jpg";
-                            mediaContainer.innerHTML += `
-                                <div class="media-box">
-                                    <img src="${imgUrl}" alt="Image">
-                                    <a class="download-btn" href="${imgUrl}" download>Download</a>
-                                </div>
-                            `;
-                            mediaFound = true;
-                        }
-                    });
-
-                    videoElements.forEach(video => {
-                        let src = video.getAttribute("src");
-                        let poster = video.getAttribute("poster");
+                videos.forEach(video => {
+                    let src = video.getAttribute("src");
+                    let poster = video.getAttribute("poster");
+                    if (src) {
                         mediaContainer.innerHTML += `
                             <div class="media-box">
-                                <video controls poster="${poster}">
-                                    <source src="${src}" type="video/mp4">
-                                    Your browser does not support video playback.
-                                </video>
-                                <a class="download-btn" href="${src}" download>Download</a>
+                                <video src="${src}" poster="${poster}" controls></video>
+                                <button class="download-btn" onclick="downloadMedia('${src}', 'mp4')">Download Video</button>
                             </div>
                         `;
-                        mediaFound = true;
-                    });
-
-                    if (!mediaFound) {
-                        dispDialog("No media found. Please check the link and internet connection.");
                     }
-
-                    status('n');
-                })
-                .catch(error => {
-                    status('n');
-                    dispDialog("Please check your internet connection & the link you entered.");
                 });
+
+                images.forEach(img => {
+                    let src = img.getAttribute("src");
+                    if (src.includes("pbs.twimg")) { 
+                        mediaContainer.innerHTML += `
+                            <div class="media-box">
+                                <img src="${src}" alt="Twitter Image">
+                                <button class="download-btn" onclick="downloadMedia('${src}', 'jpg')">Download Image</button>
+                            </div>
+                        `;
+                    }
+                });
+
+                if (!videos.length && !images.length) {
+                    alert("No media found. Please check the link.");
+                }
+
+            } catch (error) {
+                alert("Error fetching media. Try again.");
+            }
+
+            fetchButton.disabled = false;
+            loadingIndicator.style.display = "none";
         }
 
-        function logMessage(message) {
-            document.getElementById("log").innerText += message + "\n\n";
+        function downloadMedia(url, type) {
+            let timestamp = new Date().toISOString().replace(/[-:.T]/g, "_").split("_").slice(0, 2).join("-");
+            let filename = `SwiftSave_${timestamp}.${type}`;
+
+            fetch(url)
+                .then(response => response.blob())
+                .then(blob => {
+                    let link = document.createElement("a");
+                    link.href = URL.createObjectURL(blob);
+                    link.download = filename;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                })
+                .catch(error => console.error("Download failed:", error));
         }
     </script>
 
