@@ -2,88 +2,460 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>LAN File Share</title>
+  <title>NeatShare</title>
   <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.2/dist/peerjs.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.0/build/qrcode.min.js"></script>
   <script src="https://unpkg.com/html5-qrcode"></script>
   <style>
-    :root { --bg:#1e1e1e;--surface:#2a2a2a;--border:#3a3a3a;--text:#e0e0e0;--accent:#6abf9f;--accent-hover:#5aa68a;--success:#87e487;--card-bg:#292929;--spacing:0.75rem;--radius:6px;--progress-height:6px;--chunk-size:16384; }
-    *{box-sizing:border-box;margin:0;padding:0;}
-    body{background:var(--bg);color:var(--text);font-family:'Segoe UI',sans-serif;display:flex;justify-content:center;padding:calc(var(--spacing)*2);}
-    .container{width:100%;max-width:480px;}
-    h2{text-align:center;margin-bottom:var(--spacing);font-size:1.6rem;}
-    .modes{display:flex;margin-bottom:calc(var(--spacing)*1.5);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;}
-    .mode{flex:1;padding:var(--spacing);text-align:center;cursor:pointer;background:var(--surface);color:var(--text);font-weight:600;transition:background 0.2s;}
-    .mode.active{background:var(--accent);color:#fff;}
-    .section{margin-bottom:var(--spacing);}
-    label{display:block;margin-bottom:0.25rem;font-size:0.9rem;}
-    input[type=text],button{width:100%;padding:0.6rem;margin-bottom:var(--spacing);border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);color:var(--text);font-size:1rem;}
-    button{background:var(--accent);border-color:var(--accent);cursor:pointer;font-weight:600;transition:background 0.2s;}
-    button:hover:not(:disabled){background:var(--accent-hover);}
-    button:disabled{opacity:0.5;cursor:default;}
-    .status{text-align:center;color:var(--success);margin-bottom:var(--spacing);font-size:0.95rem;}
-    .switch{position:relative;width:60px;height:30px;margin-bottom:var(--spacing);}
-    .switch input{opacity:0;width:0;height:0;}
-    .slider{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);transition:background 0.2s;}
-    .slider:before{position:absolute;content:"";height:22px;width:22px;left:4px;top:4px;background:var(--accent);border-radius:50%;transition:transform 0.2s;}
-    input:checked+.slider:before{transform:translateX(30px);}
-    .switch-label{display:inline-block;vertical-align:middle;margin-left:var(--spacing);font-size:0.95rem;}
-    .box{background:var(--card-bg);border:1px solid var(--border);border-radius:var(--radius);padding:calc(var(--spacing)*1.2);margin-bottom:var(--spacing);}
-    .box h3{margin-bottom:var(--spacing);font-size:1rem;text-align:center;}
-    .file-card{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:var(--spacing);margin-bottom:var(--spacing);font-size:0.95rem;}
-    .file-info{display:flex;justify-content:space-between;align-items:center;}
-    .file-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-    .file-status{margin-left:var(--spacing);font-size:0.85rem;color:var(--success);white-space:nowrap;}
-    .file-card a{color:var(--accent);text-decoration:none;font-weight:600;margin-left:var(--spacing);}
-    .progress-container{width:100%;background:var(--surface);border-radius:var(--radius);overflow:hidden;height:var(--progress-height);margin-top:calc(var(--spacing)/2);}
-    .progress-bar{width:0;height:100%;background:var(--accent);transition:width 0.1s;}
-    #qrcode{text-align:center;margin-bottom:var(--spacing);}#reader{width:100%;height:200px;margin-bottom:var(--spacing);display:none;}
+    :root {
+      --bg: #0f0f0f;
+      --surface: #1a1a1a;
+      --text: #eee;
+      --accent: #6c5ce7;
+      --accent-hover: #5b4bc4;
+      --success: #00b894;
+      --error: #d63031;
+      --radius: 6px;
+      --gap: 1rem;
+      --pad: 1rem;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0 }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: sans-serif;
+      padding: var(--gap);
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: var(--gap);
+    }
+    .card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: var(--pad);
+      display: flex;
+      flex-direction: column;
+      gap: var(--gap);
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    h1 { font-size: 1.4rem; }
+    .peer-id {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .peer-id button {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      padding: 0.3rem 0.6rem;
+      border-radius: var(--radius);
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+    input, button, select {
+      font-size: 1rem;
+      border: none;
+      border-radius: var(--radius);
+      padding: 0.5rem;
+      background: var(--surface);
+      color: var(--text);
+    }
+    button {
+      background: var(--accent);
+      color: #fff;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    button:hover { background: var(--accent-hover) }
+    .hidden { display: none }
+    .section-header {
+      font-weight: bold;
+      font-size: 1.1rem;
+      margin-bottom: 0.5rem;
+    }
+    .controls {
+      display: flex;
+      gap: var(--gap);
+      flex-wrap: wrap;
+    }
+    .transfer-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+  
+    .progress-bar {
+      background: rgba(255,255,255,0.1);
+      width: 100%;
+      height: 6px;
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      background: var(--accent);
+      width: 0;
+      height: 100%;
+      transition: width 0.2s;
+    }
+  .transfer-card {
+  background: var(--bg);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  padding: 0.5rem 0.5rem 0.5rem 0.5rem;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.file-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-right: 1.5rem; /* make space for cancel button */
+  font-size: 0.95rem;
+}
+
+.cancel-btn {
+  position: absolute;
+  top: 0.4rem;
+  right: 0.4rem;
+  background: transparent;
+  color: var(--error);
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+    a.download-link {
+      margin-top: 0.3rem;
+      font-size: 0.9rem;
+      color: var(--accent);
+      text-decoration: underline;
+      cursor: pointer;
+    }
+    #clear-history-btn {
+      background: var(--error);
+      color: #fff;
+      align-self: center;
+      padding: 0.5rem 1rem;
+    }
+    /* QR modal */
+    .qr-modal {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.8);
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.2s;
+    }
+    .qr-modal.active { opacity: 1; pointer-events: all }
+    .qr-box {
+      background: var(--surface);
+      padding: var(--pad);
+      border-radius: var(--radius);
+      display: flex;
+      flex-direction: column;
+      gap: var(--gap);
+      width: 300px;
+    }
   </style>
 </head>
 <body>
   <div class="container">
-    <h2>LAN File Share</h2>
-    <div class="modes">
-      <div id="mode-share" class="mode active">Share</div>
-      <div id="mode-receive" class="mode">Receive</div>
+    <header>
+      <h1>NeatShare</h1>
+      
+    </header>
+<div class="peer-id">
+        <span>Your ID: <strong id="peerIdDisplay">...</strong></span>
+        <button id="copyIdBtn">Copy</button>
+      </div>
+    <div id="joinCard" class="card">
+      <div class="section-header">Join Peer</div>
+      <div class="controls">
+        <input id="joinInput" placeholder="Peer ID…">
+        <button id="joinBtn">Join</button>
+        <button id="scanQrBtn">Scan QR</button>
+      </div>
     </div>
-    <div id="shareSection" class="section">
-      <label>Your Share Code</label>
-      <input id="my-id" type="text" readonly>
-      <div id="qrcode"></div>
+
+    <div id="sendCard" class="card hidden">
+      <div class="section-header">Send Files</div>
+      <div class="controls">
+        <button id="selectBtn">Select Files</button>
+        <label><input type="checkbox" id="autoDownload"> Auto-download</label>
+      </div>
     </div>
-    <div id="receiveSection" class="section" style="display:none;">
-      <label>Enter Share Code</label>
-      <input id="connect-id" type="text" placeholder="e.g. abcd-1234">
-      <button id="connectBtn">Connect</button>
-      <button id="scanBtn">Scan QR Code</button>
-      <div id="reader"></div>
+
+    <div id="sentCard" class="card">
+      <div class="section-header">Sent Files</div>
+      <div id="sentList" class="transfer-list"></div>
     </div>
-    <div class="status" id="status">Waiting to connect…</div>
-    <div style="display:flex;align-items:center;margin-bottom:var(--spacing);">
-      <div class="switch"><input id="autoDownload" type="checkbox" checked><span class="slider"></span></div>
-      <span class="switch-label">Auto Download</span>
+
+    <div id="recvCard" class="card">
+      <div class="section-header">Received Files</div>
+      <div id="receivedList" class="transfer-list"></div>
     </div>
-    <button id="sendBtn" disabled>Select Files to Send</button>
-    <input id="fileInput" type="file" multiple hidden>
-    <div class="box"><h3>Files Received</h3><div id="receivedArea"></div></div>
-    <div class="box"><h3>Files Sent</h3><div id="sentArea"></div></div>
+
+    <button id="clear-history-btn">Clear History</button>
   </div>
+
+  <div id="qrModal" class="qr-modal">
+    <div class="qr-box">
+      <div class="section-header">Scan QR Code</div>
+      <select id="cameraSelect"></select>
+      <div id="qrScanner" style="width:260px; height:260px; margin:auto;"></div>
+      <button id="closeQrBtn">Close</button>
+    </div>
+  </div>
+
+  <input type="file" id="fileInput" multiple hidden>
+
   <script>
-    const shareTab=document.getElementById('mode-share'),recvTab=document.getElementById('mode-receive'),shareSec=document.getElementById('shareSection'),recvSec=document.getElementById('receiveSection'),scanBtn=document.getElementById('scanBtn'),readerDiv=document.getElementById('reader'),modes=document.querySelector('.modes');let scanner;
-    scanBtn.style.display='none';shareTab.onclick=()=>{shareTab.classList.add('active');recvTab.classList.remove('active');shareSec.style.display='';recvSec.style.display='none';scanBtn.style.display='none';readerDiv.style.display='none';};recvTab.onclick=()=>{recvTab.classList.add('active');shareTab.classList.remove('active');shareSec.style.display='none';recvSec.style.display='';scanBtn.style.display='block';};
-    const peer=new Peer(),incoming={};;let conn;
-    peer.on('open',id=>{document.getElementById('my-id').value=id;QRCode.toCanvas(document.createElement('canvas'),id,{width:150},(e,c)=>{if(!e)document.getElementById('qrcode').appendChild(c);});setStatus('Select mode and connect to begin.');});
-    peer.on('connection',c=>{conn=c;onConnect();});document.getElementById('connectBtn').onclick=()=>{const code=document.getElementById('connect-id').value.trim();if(!code)return;conn=peer.connect(code);conn.on('open',onConnect);};
-    scanBtn.onclick=()=>{if(!scanner)scanner=new Html5Qrcode('reader');readerDiv.style.display='block';scanner.start({facingMode:'environment'},{fps:10,qrbox:200},code=>{document.getElementById('connect-id').value=code;document.getElementById('connectBtn').click();scanner.stop();readerDiv.style.display='none';}).catch(console.error);};
-    function onConnect(){modes.style.display='none';shareSec.style.display='none';recvSec.style.display='none';setStatus('Connected!');document.getElementById('sendBtn').disabled=false;conn.on('data',msg=>{if(msg.type==='file-meta'){incoming[msg.name]={chunks:[],received:0,total:msg.total};createCard('receivedArea',msg.name);}
-        else if(msg.type==='file-chunk'){const f=incoming[msg.name];f.chunks[msg.index]=msg.data;f.received++;updateProgress('receivedArea',msg.name,f.received/f.total*100);if(f.received===f.total){const blob=new Blob(f.chunks);const url=URL.createObjectURL(blob);finalizeCard('receivedArea',msg.name,url);}}});}
-    document.getElementById('sendBtn').onclick=()=>document.getElementById('fileInput').click();document.getElementById('fileInput').addEventListener('change',e=>{for(const f of e.target.files)sendFile(f);});
-    function sendFile(file){const chunkSize=parseInt(getComputedStyle(document.documentElement).getPropertyValue('--chunk-size')),total=Math.ceil(file.size/chunkSize);conn.send({type:'file-meta',name:file.name,total});const reader=new FileReader();let offset=0,index=0;reader.onload=e=>{conn.send({type:'file-chunk',name:file.name,index,total,data:e.target.result});updateProgress('sentArea',file.name,(index+1)/total*100);index++;offset+=chunkSize;if(offset<file.size)readSlice();};const readSlice=()=>{const slice=file.slice(offset,offset+chunkSize);reader.readAsArrayBuffer(slice);};createCard('sentArea',file.name);readSlice();}
-    function createCard(areaId,name){const cont=document.getElementById(areaId),card=document.createElement('div');card.className='file-card';card.dataset.filename=name;card.innerHTML=`<div class="file-info"><span class="file-name">${name}</span><span class="file-status">0%</span></div><div class="progress-container"><div class="progress-bar"></div></div>`;cont.appendChild(card);return card;}
-    function updateProgress(areaId,name,percent){document.querySelectorAll(`#${areaId} .file-card`).forEach(card=>{if(card.dataset.filename===name){card.querySelector('.progress-bar').style.width=percent+'%';card.querySelector('.file-status').textContent=Math.floor(percent)+'%';}});}
-    function finalizeCard(areaId,name,url){document.querySelectorAll(`#${areaId} .file-card`).forEach(card=>{if(card.dataset.filename===name){card.querySelector('.file-status').textContent='Done';const link=document.createElement('a');link.href=url;link.download=name;link.textContent='Download';link.style.marginLeft='var(--spacing)';card.querySelector('.file-info').appendChild(link);if(document.getElementById('autoDownload').checked)link.click();}});}
-    function setStatus(msg){document.getElementById('status').textContent=msg;}
+  const peer = new Peer({ serialization: 'binary' });
+  let conn = null, scanner = null;
+  const sendQueue = [], cancelled = new Set(), transfers = {};
+  let sending = false, currentId = null;
+
+  // UI refs
+  const joinCard = document.getElementById('joinCard');
+  const sendCard = document.getElementById('sendCard');
+  const sentList = document.getElementById('sentList');
+  const receivedList = document.getElementById('receivedList');
+  const clearBtn = document.getElementById('clear-history-btn');
+
+  const peerIdDisplay = document.getElementById('peerIdDisplay');
+  document.getElementById('copyIdBtn').onclick = () =>
+    navigator.clipboard.writeText(peerIdDisplay.textContent);
+
+  // Helpers
+  function fmtSize(b){
+    const u=['B','KB','MB','GB'],i=b?Math.floor(Math.log(b)/Math.log(1024)):0;
+    return (b/Math.pow(1024,i)).toFixed(1)+' '+u[i];
+  }
+  function getVar(n){
+    return getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  }
+
+  // Reset on disconnect
+  function resetAll(){
+    conn = null;
+    joinCard.classList.remove('hidden');
+    sendCard.classList.add('hidden');
+    sendQueue.splice(0);
+    cancelled.clear();
+    sending = false; currentId = null;
+    Object.values(transfers).forEach(t => {
+      if(t.reader) t.reader.abort();
+      if(t.card && !t.card.classList.contains('completed')) t.card.remove();
+    });
+    for(let k in transfers) delete transfers[k];
+  }
+
+  // Peer events
+  peer.on('open', id => {
+    peerIdDisplay.textContent = id;
+    const dark = getVar('--accent'), light = getVar('--surface');
+    QRCode.toCanvas(id, { width:180, margin:2, color:{ dark, light }},
+      (e, c)=> !e && peerIdDisplay.parentNode.appendChild(c)
+    );
+  });
+  peer.on('connection', c=>setupConn(c));
+  peer.on('disconnected', resetAll);
+  peer.on('close', resetAll);
+  peer.on('error', resetAll);
+
+  function setupConn(c){
+    conn = c;
+    joinCard.classList.add('hidden');
+    sendCard.classList.remove('hidden');
+    c.on('data', handleData);
+    c.on('close', resetAll);
+  }
+
+  // Join controls
+  document.getElementById('joinBtn').onclick = ()=>{
+    const id = document.getElementById('joinInput').value.trim();
+    if(!id) return;
+    const c = peer.connect(id, { reliable:true });
+    c.on('open', ()=>setupConn(c));
+  };
+  document.getElementById('scanQrBtn').onclick = ()=>{
+    document.getElementById('qrModal').classList.add('active');
+    Html5Qrcode.getCameras().then(cams=>{
+      const sel = document.getElementById('cameraSelect');
+      cams.forEach(cam=>{
+        const o = document.createElement('option');
+        o.value=cam.id; o.textContent=cam.label||cam.id;
+        sel.append(o);
+      });
+      startScan(cams[0].id);
+    });
+  };
+  document.getElementById('closeQrBtn').onclick = ()=>{
+    document.getElementById('qrModal').classList.remove('active');
+    scanner && scanner.stop();
+  };
+  function startScan(deviceId){
+    if(scanner) scanner.stop();
+    scanner = new Html5Qrcode('qrScanner');
+    scanner.start(deviceId, { fps:10 }, text=>{
+      document.getElementById('joinInput').value = text;
+      scanner.stop();
+      document.getElementById('qrModal').classList.remove('active');
+    });
+  }
+
+  // File send controls
+  document.getElementById('selectBtn').onclick =
+    ()=>document.getElementById('fileInput').click();
+
+  document.getElementById('fileInput').onchange = e=>{
+    if(!conn||conn.open===false) return alert('Not connected');
+    const files = Array.from(e.target.files);
+    const meta = files.map(f=>({ id:gen(), name:f.name, size:f.size }));
+    files.forEach((f,i)=>{
+      transfers[meta[i].id] = { file:f, reader:null, card:null };
+    });
+    conn.send({ type:'file-list', files:meta });
+    meta.forEach(m=>createCard(m,'sent'));
+    sendQueue.push(...meta.map(m=>m.id));
+    if(!sending) nextSend();
+  };
+
+  function nextSend(){
+    const id = sendQueue.shift();
+    if(!id){ sending=false; currentId=null; return; }
+    sending = true; currentId = id;
+    const { file, card } = transfers[id];
+    const size = file.size;
+    const chunkSize = Math.min(Math.max(size*0.03,128*1024),512*1024);
+    let offset = 0;
+
+    conn.send({ type:'start', id });
+    function readSlice(){
+      if(cancelled.has(id)) return finish();
+      const slice = file.slice(offset, offset+chunkSize);
+      const r = new FileReader();
+      r.onload = ev=>{
+        conn.send({ type:'chunk', id, data:ev.target.result });
+        offset += ev.target.result.byteLength;
+        updateProgress(card, Math.min(offset/size*100,100));
+        offset < size ? readSlice() : finish();
+      };
+      transfers[id].reader = r;
+      r.readAsArrayBuffer(slice);
+    }
+    function finish(){
+      conn.send({ type:'end', id });
+      card.classList.add('completed');
+      sending = false; currentId = null;
+      nextSend();
+    }
+    readSlice();
+  }
+
+  // Data handler
+  function handleData(msg){
+    switch(msg.type){
+      case 'file-list':
+        msg.files.forEach(f=>{
+          transfers[f.id] = { file:f, chunks:[], reader:null, card:null };
+          createCard(f,'received');
+        });
+        break;
+      case 'start':
+        transfers[msg.id].received = 0;
+        transfers[msg.id].chunks = [];
+        break;
+      case 'chunk':
+        if(cancelled.has(msg.id)) return;
+        const t = transfers[msg.id];
+        t.chunks.push(msg.data);
+        t.received += msg.data.byteLength;
+        updateProgress(t.card, Math.min(t.received/t.file.size*100,100));
+        break;
+      case 'end':
+        const tr = transfers[msg.id];
+        const blob = new Blob(tr.chunks);
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = tr.file.name;
+        a.textContent = 'Download';
+        a.className = 'download-link';
+        tr.card.appendChild(a);
+        tr.card.classList.add('completed');
+        if(document.getElementById('autoDownload').checked) a.click();
+        break;
+      case 'cancel':
+        abortTransfer(msg.id, true);
+        break;
+    }
+  }
+
+  // UI & cancellation
+  function createCard(meta, dir){
+    const list = dir==='sent' ? sentList : receivedList;
+    const card = document.createElement('div');
+    card.className = 'transfer-card';
+    card.innerHTML = `
+      <div class="file-meta">
+        <span>${meta.name}</span>
+        <span>${fmtSize(meta.size)}</span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill"></div></div>
+      <button class="cancel-btn">&times;</button>
+    `;
+    list.append(card);
+    transfers[meta.id].card = card;
+    card.querySelector('.cancel-btn').onclick = ()=>cancelTransfer(meta.id);
+  }
+
+  function updateProgress(card, pct){
+    card.querySelector('.progress-fill').style.width = pct+'%';
+  }
+
+  function cancelTransfer(id){
+    if(conn && conn.open) conn.send({ type:'cancel', id });
+    abortTransfer(id, false);
+  }
+
+  function abortTransfer(id, remote){
+    cancelled.add(id);
+    const t = transfers[id];
+    if(!t) return;
+    if(t.reader) t.reader.abort();
+    // if this was the one sending, immediately kick off next
+    if(id === currentId){
+      sending = false;
+      nextSend();
+    }
+    // remove UI if not completed
+    if(t.card && !t.card.classList.contains('completed')){
+      t.card.remove();
+    }
+  }
+
+  clearBtn.onclick = ()=>{
+    document.querySelectorAll('.transfer-card.completed')
+      .forEach(c=>c.remove());
+  };
+
+  function gen(){
+    return 'f_'+Math.random().toString(36).slice(2,10);
+  }
   </script>
 </body>
 </html>
