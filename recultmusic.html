@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Recult</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" integrity="sha512-CmzM9T0F4svNU9aQn+UowT3FlOyE8CXYMEFgnM8BoYbNEBoVZfd3YdsJLK9Va7kKzk9A3Y7N0gWBM+NddfOC2Q==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <style>
+    :root {
+      --bg-color: #121212;
+      --card-bg: #1e1e1e;
+      --text-color: #ffffff;
+      --accent: #1db954;
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Helvetica Neue', sans-serif;
+      background: url('https://elements-resized.envatousercontent.com/elements-cover-images/5e29eccf-29c1-415c-a7fb-d4a28790e516?w=2038&cf_fit=scale-down&q=85&format=auto&s=e9b3fea3d70662c207b0c0e890dfb432992a9056a327caa72bde66033ef3ebb1') no-repeat center center fixed;
+      background-size: cover;
+      color: var(--text-color);
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      font-weight: normal;
+      position: relative;
+      z-index: 1;
+    }
+
+    header {
+      text-align: center;
+      padding: 2rem 1rem 0.5rem;
+      z-index: 1;
+    }
+
+    .site-title {
+      font-family: 'Bebas Neue', cursive;
+      font-size: 3rem;
+      letter-spacing: 2px;
+      margin: 0;
+    }
+
+    .bottom-card {
+      background-color: rgba(18, 18, 18, 0.9);
+      padding: 1.5rem;
+      border-radius: 1.5rem;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+      margin: 2rem 1rem;
+      display: grid;
+      gap: 1.5rem;
+      z-index: 1;
+    }
+
+    .link-card {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #2a2a2a;
+      border-radius: 1rem;
+      padding: 1rem;
+      text-decoration: none;
+      color: var(--text-color);
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+      transition: background 0.2s;
+    }
+
+    .link-card:hover {
+      background: #3a3a3a;
+    }
+
+    .link-card img {
+      width: 60px;
+      height: 60px;
+      border-radius: 0.5rem;
+      object-fit: cover;
+      margin-right: 1rem;
+    }
+
+    .link-content {
+      flex: 1;
+      margin-right: 1rem;
+    }
+
+    .link-content h3 {
+      margin: 0;
+      font-size: 1.1rem;
+      color: var(--text-color);
+    }
+
+    .listen-button {
+      background-color: var(--accent);
+      border: none;
+      border-radius: 2rem;
+      padding: 0.5rem 1rem;
+      color: #fff;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .listen-button:hover {
+      background-color: #17a44b;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1 class="site-title">Recult</h1>
+  </header>
+
+  <div class="bottom-card">
+    <div class="link-card">
+      <img src="https://i.pinimg.com/736x/93/46/53/934653214719cf630e0f5cf9c746b364.jpg" alt="Playlist Cover">
+      <div class="link-content">
+        <h3>Chill Hits</h3>
+      </div>
+      <a href="#"><button class="listen-button">Listen</button></a>
+    </div>
+
+    <div class="link-card">
+      <img src="https://i.pinimg.com/736x/93/46/53/934653214719cf630e0f5cf9c746b364.jpg" alt="Playlist Cover">
+      <div class="link-content">
+        <h3>Rap Caviar</h3>
+      </div>
+      <a href="#"><button class="listen-button">Listen</button></a>
+    </div>
+
+    <div class="link-card">
+      <img src="https://i.pinimg.com/736x/93/46/53/934653214719cf630e0f5cf9c746b364.jpg" alt="Playlist Cover">
+      <div class="link-content">
+        <h3>Lo-Fi Beats</h3>
+      </div>
+      <a href="#"><button class="listen-button">Listen</button></a>
+    </div>
+  </div>
+</body>
+</html>
