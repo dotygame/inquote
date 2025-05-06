@@ -316,7 +316,7 @@
       $('details-sheet').classList.add('open');
     }
     function generateCheckoutMessage() {
-  let msg = 'Thanks for showing interest in our products!%0A%0AOrder Summary:%0A';
+  let msg = 'I would like to order these products!%0A%0AOrder Summary:%0A';
   cart.forEach(c => {
     msg += `• ${c.name} - ${c.qty} x ₹${c.price} = ₹${c.qty * c.price}%0A`;
   });
@@ -328,7 +328,7 @@
 
 $('checkout-whatsapp').onclick = () => {
   const msg = generateCheckoutMessage();
-  const url = `https://wa.me/8903543896?text=${msg}`;
+  const url = `https://wa.me/+918903543896?text=${msg}`;
   window.open(url, '_blank');
 };
 
