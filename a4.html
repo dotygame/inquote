@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Recult Shop</title>
+  <title>Recult</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet"/>
@@ -54,7 +54,16 @@
 
     .card-header h3 { font-size:1.2rem; margin:0; }
     .card-header p { font-size:.9rem; color:var(--subtle); margin:0; }
+    #details-sheet .card-content {
+  padding: 0;
+  gap: 0;
+}
 
+#details-title,
+#details-desc {
+  padding: 0;
+  margin: 0;
+}
     .qty {
   display:flex; align-items:center; gap:.5rem; justify-content:flex-start;
 }
@@ -88,8 +97,8 @@
       display:flex; justify-content:space-between; align-items:center; margin-bottom:.5rem;
     }
     .sheet-header h3 {
-      display:flex; align-items:center; gap:.5rem;
-      font-size:1.2rem; margin:0;
+      display:flex; align-items:center; gap:.10rem;
+      font-size:1.2rem; margin:0; justify-content: center;
     }
     .sheet-close {
       background:none; border:none; color:var(--accent);
@@ -132,13 +141,24 @@
 
     .checkout-links {
       margin-top:0.5rem;
-      display:flex; gap:0.5rem; justify-content:center; flex-wrap:wrap;
+      display:flex; gap:0.5rem; justify-content:start; flex-wrap:wrap;
     }
     .checkout-links a {
       background:var(--accent); color:#fff;
       text-decoration:none; padding:.5rem 1rem;
       border-radius:4px; font-size:.85rem;
     }
+    .checkout-btn {
+  color: #fff;
+  text-decoration: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  font-weight: bold;
+  display: inline-block;
+}
+.checkout-btn:hover {
+  filter: brightness(0.9);
+}
 
     .dialog-overlay {
       position:fixed; top:0; left:0; right:0; bottom:0;
@@ -159,7 +179,7 @@
 </head>
 <body data-theme="">
   <header>
-    <h1>Recult Shop</h1>
+    <h1>Recult</h1>
     <div class="controls">
       <button id="open-cart"><span class="material-icons">shopping_cart</span></button>
       <button id="toggle-theme"><span class="material-icons">dark_mode</span></button>
@@ -170,23 +190,27 @@
 
   <div class="sheet" id="cart-sheet">
     <div class="sheet-header">
-      <h3><span class="material-icons">shopping_bag</span>Your Cart</h3>
+      <h3>Your Cart</h3>
       <button class="sheet-close" id="close-cart"><span class="material-icons">close</span></button>
     </div>
     <div id="cart-list"></div>
     <div class="grand-total" id="grand-total">Grand Total: ₹0</div>
-    <p class="checkout-note"><strong>Checkout via:</strong></p>
-    <div class="checkout-links">
-      <a href="#">WhatsApp</a>
-      <a href="#">Instagram</a>
-      <a href="#">Telegram</a>
+    <p class="checkout-note">
+      You can place your order with us through Instagram, WhatsApp, or Telegram.
+    </p>
+    <p class="checkout-note">
+      Checkout Via.
+    </p>
+    <div style="display: flex; gap: 1rem; justify-content: start; flex-wrap: wrap; margin-top: 1rem;">
+      <a href="#" id="checkout-whatsapp" class="checkout-btn" style="background:#25D366;">WhatsApp</a>
+      <a href="#" id="checkout-instagram" class="checkout-btn" style="background:#E1306C;">Instagram</a>
+      <a href="#" id="checkout-telegram" class="checkout-btn" style="background:#0088cc;">Telegram</a>
     </div>
-    <p class="checkout-note">You can place your order with us through Instagram, WhatsApp, or Telegram. Our rep will contact you.</p>
   </div>
 
   <div class="sheet" id="details-sheet">
     <div class="sheet-header">
-      <h3><span class="material-icons">info</span>Product Details</h3>
+      <h3>Product Details</h3>
       <button class="sheet-close" id="close-details"><span class="material-icons">close</span></button>
     </div>
     <div class="card-content">
@@ -291,37 +315,34 @@
       $('details-desc').textContent = p.desc;
       $('details-sheet').classList.add('open');
     }
+    function generateCheckoutMessage() {
+  let msg = 'Thanks for showing interest in our products!%0A%0AOrder Summary:%0A';
+  cart.forEach(c => {
+    msg += `• ${c.name} - ${c.qty} x ₹${c.price} = ₹${c.qty * c.price}%0A`;
+  });
+  const total = cart.reduce((sum, item) => sum + item.qty * item.price, 0);
+  msg += `%0AGrand Total: ₹${total}%0A%0A— Recult Team`;
 
-    function buildOrderMessage() {
-      let msg = "Thanks for showing interest in our product.%0AHere’s your order summary:%0A";
-      let total = 0;
-      cart.forEach(item => {
-        const subtotal = item.qty * item.price;
-        msg += `• ${item.name} - Qty: ${item.qty}, ₹${item.price} each = ₹${subtotal}%0A`;
-        total += subtotal;
-      });
-      msg += `%0ATotal: ₹${total}`;
-      return msg;
-    }
+  return msg;
+}
 
-    function setupCheckoutLinks() {
-      document.querySelectorAll('.checkout-links a').forEach(a => {
-        a.onclick = e => {
-          e.preventDefault();
-          const msg = buildOrderMessage();
-          let url = '';
-          if (a.textContent.includes('WhatsApp')) {
-            url = `https://wa.me/918903543896?text=${msg}`;
-          } else if (a.textContent.includes('Instagram')) {
-            url = `https://www.instagram.com/recult.store/`;
-            alert("Please message us on Instagram and share your order.");
-          } else if (a.textContent.includes('Telegram')) {
-            url = `https://t.me/share/url?url=&text=${msg}`;
-          }
-          window.open(url, '_blank');
-        };
-      });
-    }
+$('checkout-whatsapp').onclick = () => {
+  const msg = generateCheckoutMessage();
+  const url = `https://wa.me/8903543896?text=${msg}`;
+  window.open(url, '_blank');
+};
+
+$('checkout-instagram').onclick = () => {
+  window.open('https://instagram.com/recult.store', '_blank');
+};
+
+$('checkout-telegram').onclick = () => {
+  const msg = generateCheckoutMessage();
+  const url = `https://t.me/share/url?url=https://recult.store&text=${msg}`;
+  window.open(url, '_blank');
+};
+
+  
 
     $('open-cart').onclick = () => {
       renderCart();
